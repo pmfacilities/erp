@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, FileText, Users, Wrench, CalendarDays, UserCog,
   DollarSign, Package, AlertTriangle, BarChart3, Settings, Building2,
-  Receipt, Zap, Briefcase, FileUser, Trophy, Lock, Shield, PiggyBank, LogOut,
+  Receipt, Zap, Briefcase, FileUser, Trophy, Lock, Shield, PiggyBank, LogOut, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStore, PerfilSessao } from '@/store/useStore'
@@ -86,18 +86,31 @@ const perfilLabelCurto: Record<PerfilSessao, string> = {
 export function Sidebar() {
   const sessao = useStore((s) => s.sessao)
   const logout = useStore((s) => s.logout)
+  const sidebarAberta = useStore((s) => s.sidebarAberta)
+  const toggleSidebar = useStore((s) => s.toggleSidebar)
   const perfil = sessao?.perfil || 'gerente'
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col h-screen sticky top-0">
-      <div className="p-5 border-b border-slate-800 flex items-center gap-2">
-        <div className="h-9 w-9 rounded-lg bg-brand-500 flex items-center justify-center">
-          <Building2 className="h-5 w-5 text-white" />
+    <aside className={cn(
+      "fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 flex flex-col h-screen transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+      sidebarAberta ? "translate-x-0" : "-translate-x-full"
+    )}>
+      <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-lg bg-brand-500 flex items-center justify-center">
+            <Building2 className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <div className="font-semibold">PSFM</div>
+            <div className="text-xs text-slate-400">PS Facilities Manager</div>
+          </div>
         </div>
-        <div>
-          <div className="font-semibold">PSFM</div>
-          <div className="text-xs text-slate-400">PS Facilities Manager</div>
-        </div>
+        <button 
+          onClick={() => toggleSidebar(false)}
+          className="lg:hidden h-8 w-8 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-400"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
       <nav className="flex-1 p-3 overflow-y-auto">
         {sections
@@ -116,6 +129,7 @@ export function Sidebar() {
                   {itensVisiveis.map(({ to, label, icon: Icon, destaque }) => (
                     <NavLink
                       key={to} to={to} end={to === '/'}
+                      onClick={() => toggleSidebar(false)}
                       className={({ isActive }) =>
                         cn(
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm',

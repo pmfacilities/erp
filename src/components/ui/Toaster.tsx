@@ -13,7 +13,7 @@ export function Toaster() {
   const removeToast = useStore((s) => s.removeToast)
 
   return (
-    <div className="fixed top-4 right-4 z-[100] space-y-2 w-80">
+    <div className="fixed top-4 right-4 left-4 sm:left-auto z-[100] space-y-2 sm:w-80">
       {toasts.map((t) => (
         <div
           key={t.id}

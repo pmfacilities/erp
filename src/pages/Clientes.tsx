@@ -28,7 +28,7 @@ export function Clientes() {
       <Header title="Clientes" subtitle={`${clientes.length} clientes cadastrados`} />
       <div className="p-6 space-y-4">
         <Card>
-          <CardContent className="flex gap-3 items-center">
+          <CardContent className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input className="pl-9" placeholder="Buscar cliente..." value={busca} onChange={(e) => setBusca(e.target.value)} />
@@ -175,7 +175,7 @@ function ClienteDialog({
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="col-span-2">
           <Label required>Razão Social</Label>
           <Input value={form.razaoSocial} onChange={(e) => set('razaoSocial', e.target.value)} />

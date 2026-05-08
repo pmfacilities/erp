@@ -96,7 +96,7 @@ export function Login() {
 
           <div className="mt-6 pt-6 border-t border-slate-100">
             <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Credenciais de acesso (sócios)</div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {[
                 ['silva',  'silva123',  'Jonathan da Silva'],
                 ['david',  'david123',  'David Souza'],

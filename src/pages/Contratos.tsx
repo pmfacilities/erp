@@ -211,7 +211,7 @@ function NovoContratoDialog({
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label required>Número do contrato</Label>
           <Input value={numero} onChange={(e) => setNumero(e.target.value)} />
@@ -286,7 +286,7 @@ function DetalheContrato({ contrato, onClose }: { contrato: Contrato | null; onC
   const custoAno = contrato.custoMensal * 12
   return (
     <Dialog open onClose={onClose} title={contrato.numero} description={contrato.titulo} size="xl">
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <InfoCell label="Cliente" value={cliente?.nomeFantasia || '-'} />
         <InfoCell label="Vigência" value={`${formatDate(contrato.vigenciaInicio)} → ${formatDate(contrato.vigenciaFim)}`} />
         <InfoCell label="Status" value={<Badge tone={statusTone[contrato.status]}>{contrato.status}</Badge>} />
@@ -297,7 +297,7 @@ function DetalheContrato({ contrato, onClose }: { contrato: Contrato | null; onC
 
       <Card className="mb-4">
         <CardHeader><CardTitle>Rentabilidade projetada (12 meses)</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div><div className="text-xs text-slate-500">Receita anual</div><div className="text-lg font-semibold text-emerald-600">{formatBRL(receitaAno)}</div></div>
           <div><div className="text-xs text-slate-500">Custo anual</div><div className="text-lg font-semibold text-red-600">{formatBRL(custoAno)}</div></div>
           <div><div className="text-xs text-slate-500">Lucro anual</div><div className="text-lg font-semibold text-brand-600">{formatBRL(receitaAno - custoAno)}</div></div>

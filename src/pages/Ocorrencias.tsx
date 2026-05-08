@@ -146,7 +146,7 @@ function NovaOcorrenciaDialog({
         <Button onClick={() => onSave({ ...f, foto: foto || undefined })} disabled={!f.titulo || !f.postoNome}>Registrar</Button>
       </>}
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label required>Contrato</Label>
           <Select value={f.contratoId} onChange={(e) => setF((x) => ({ ...x, contratoId: e.target.value, postoNome: '' }))}>

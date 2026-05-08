@@ -160,6 +160,10 @@ interface State {
   // pro-labore
   updateProLabore: (patch: Partial<ProLaboreConfig>) => void
 
+  // UI
+  sidebarAberta: boolean
+  toggleSidebar: (aberto?: boolean) => void
+
   // sessão / auth
   login: (identificador: string, senha: string) => { ok: boolean; erro?: string }
   logout: () => void
@@ -210,6 +214,9 @@ export const useStore = create<State>((set, get) => ({
   curriculos: curriculosSeed,
   concorrentes: concorrentesSeed,
   proLabore: proLaboreDefault,
+  sidebarAberta: false,
+
+  toggleSidebar: (aberto) => set((s) => ({ sidebarAberta: aberto !== undefined ? aberto : !s.sidebarAberta })),
 
   addCliente: (c) => set((s) => ({ clientes: [{ ...c, id: 'cli-' + uid(), criadoEm: new Date().toISOString().slice(0, 10) }, ...s.clientes] })),
   updateCliente: (id, patch) => set((s) => ({ clientes: s.clientes.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
