@@ -110,10 +110,10 @@ export function Funcionarios() {
                           <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white font-semibold flex items-center justify-center text-xs">
                             {f.nome.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                           </div>
-                          <div className="font-medium text-slate-900">{f.nome}</div>
+                          <div className="font-medium text-slate-900 whitespace-nowrap">{f.nome}</div>
                         </div>
                       </TD>
-                      <TD className="text-xs font-mono">{f.cpf}</TD>
+                      <TD className="text-xs font-mono whitespace-nowrap">{f.cpf}</TD>
                       <TD>{f.cargo}</TD>
                       <TD className="text-xs">
                         <div className="font-medium text-slate-900">{ct?.numero || '—'}</div>

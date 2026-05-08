@@ -8,7 +8,7 @@ export function Layout() {
   const toggleSidebar = useStore((s) => s.toggleSidebar)
 
   return (
-    <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       {/* Backdrop para mobile */}
       {sidebarAberta && (
         <div 
@@ -19,7 +19,7 @@ export function Layout() {
       
       <Sidebar />
       
-      <main className="flex-1 min-w-0 flex flex-col relative">
+      <main className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto relative lg:pl-64">
         <Outlet />
       </main>
       

@@ -92,7 +92,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 flex flex-col h-screen transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+      "fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 flex flex-col h-screen transition-transform duration-300 ease-in-out lg:translate-x-0",
       sidebarAberta ? "translate-x-0" : "-translate-x-full"
     )}>
       <div className="p-5 border-b border-slate-800 flex items-center justify-between">
