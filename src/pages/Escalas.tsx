@@ -144,10 +144,10 @@ function NovaEscalaDialog({
   open, data, onClose, onSave,
 }: {
   open: boolean; data: string; onClose: () => void
-  onSave: (t: { data: string; funcionarioId: string; postoNome: string; contratoId: string; inicio: string; fim: string; status: 'agendado' }) => void
+  onSave: (t: { data: string; funcionarioId: string; postoNome: string; contratoId?: string; servicoAvulsoId?: string; inicio: string; fim: string; status: 'agendado' }) => void
 }) {
-  const { funcionarios, contratos } = useStore()
-  const [form, setForm] = useState({ funcionarioId: '', contratoId: '', postoNome: '', inicio: '06:00', fim: '14:00' })
+  const { funcionarios, contratos, servicosAvulsos } = useStore()
+  const [form, setForm] = useState({ funcionarioId: '', contratoId: '', servicoAvulsoId: '', postoNome: '', inicio: '06:00', fim: '14:00' })
 
   const contratoSel = contratos.find((c) => c.id === form.contratoId)
 
@@ -159,10 +159,19 @@ function NovaEscalaDialog({
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button
             onClick={() => {
-              if (!form.funcionarioId || !form.contratoId) return
-              onSave({ data, ...form, status: 'agendado' })
+              if (!form.funcionarioId || (!form.contratoId && !form.servicoAvulsoId)) return
+              onSave({ 
+                data, 
+                funcionarioId: form.funcionarioId,
+                postoNome: form.postoNome || (form.servicoAvulsoId ? 'Serviço Avulso' : ''),
+                contratoId: form.contratoId || undefined,
+                servicoAvulsoId: form.servicoAvulsoId || undefined,
+                inicio: form.inicio,
+                fim: form.fim,
+                status: 'agendado' 
+              })
             }}
-            disabled={!form.funcionarioId || !form.contratoId}
+            disabled={!form.funcionarioId || (!form.contratoId && !form.servicoAvulsoId)}
           >
             Alocar
           </Button>
@@ -171,11 +180,25 @@ function NovaEscalaDialog({
     >
       <div className="space-y-3">
         <div>
-          <Label required>Contrato</Label>
-          <Select value={form.contratoId} onChange={(e) => setForm((f) => ({ ...f, contratoId: e.target.value, postoNome: '' }))}>
-            <option value="">Selecione...</option>
+          <Label>Vincular a Contrato</Label>
+          <Select value={form.contratoId} onChange={(e) => setForm((f) => ({ ...f, contratoId: e.target.value, servicoAvulsoId: '', postoNome: '' }))}>
+            <option value="">Selecione um contrato...</option>
             {contratos.filter((c) => c.status === 'ativo').map((c) => (
               <option key={c.id} value={c.id}>{c.numero} — {c.titulo}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-px bg-slate-200" />
+          <span className="text-[10px] font-bold text-slate-400 uppercase">ou</span>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+        <div>
+          <Label>Vincular a Serviço Avulso</Label>
+          <Select value={form.servicoAvulsoId} onChange={(e) => setForm((f) => ({ ...f, servicoAvulsoId: e.target.value, contratoId: '', postoNome: 'Serviço Avulso' }))}>
+            <option value="">Selecione um serviço avulso...</option>
+            {servicosAvulsos.map((s) => (
+              <option key={s.id} value={s.id}>{s.numero || 'S/N'} — {s.cliente}</option>
             ))}
           </Select>
         </div>
@@ -194,7 +217,7 @@ function NovaEscalaDialog({
           <Label required>Funcionário</Label>
           <Select value={form.funcionarioId} onChange={(e) => setForm((f) => ({ ...f, funcionarioId: e.target.value }))}>
             <option value="">Selecione...</option>
-            {funcionarios.filter((f) => f.status === 'ativo').map((f) => (
+            {funcionarios.filter((f) => f.status === 'ativo' || f.status === 'avulso').map((f) => (
               <option key={f.id} value={f.id}>{f.nome} — {f.cargo}</option>
             ))}
           </Select>

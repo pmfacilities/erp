@@ -98,6 +98,11 @@ interface State {
   updateFuncionario: (id: string, patch: Partial<Funcionario>) => Promise<void>
   removeFuncionario: (id: string) => Promise<void>
 
+  // escalas
+  addEscala: (e: Omit<EscalaTurno, 'id'>) => Promise<void>
+  updateEscala: (id: string, patch: Partial<EscalaTurno>) => Promise<void>
+  removeEscala: (id: string) => Promise<void>
+
   // ocorrencias
   addOcorrencia: (o: Omit<Ocorrencia, 'id' | 'criadaEm'>) => Promise<void>
   updateOcorrencia: (id: string, patch: Partial<Ocorrencia>) => Promise<void>
@@ -167,18 +172,19 @@ export const useStore = create<State>((set, get) => ({
         { data: cli }, { data: ctr }, { data: fun }, 
         { data: oco }, { data: fin }, { data: est },
         { data: usr }, { data: cfg }, { data: srv },
-        { data: dsp }
+        { data: dsp }, { data: esc }
       ] = await Promise.all([
         supabase.from('clientes').select('*').order('criado_em', { ascending: false }),
         supabase.from('contratos').select('*, postos(*)'),
-        supabase.from('funcionarios').select('*'),
+        supabase.from('funcionarios').select('*').order('nome', { ascending: true }),
         supabase.from('ocorrencias').select('*').order('criada_em', { ascending: false }),
         supabase.from('financeiro').select('*').order('vencimento', { ascending: true }),
-        supabase.from('estoque').select('*'),
+        supabase.from('estoque').select('*').order('nome', { ascending: true }),
         supabase.from('usuarios').select('*'),
         supabase.from('configuracoes').select('*').single(),
         supabase.from('servicos_avulsos').select('*').order('data', { ascending: false }),
         supabase.from('despesas').select('*').order('data', { ascending: false }),
+        supabase.from('escalas').select('*').order('data', { ascending: false }),
       ])
 
       set({
@@ -224,6 +230,18 @@ export const useStore = create<State>((set, get) => ({
           status: f.status,
           telefone: f.telefone,
           asoValidade: f.aso_validade,
+          pix: f.pix,
+        })),
+        escalas: (esc || []).map(e => ({
+          id: e.id,
+          data: e.data,
+          funcionarioId: e.funcionario_id,
+          postoNome: e.posto_nome,
+          contratoId: e.contrato_id,
+          servicoAvulsoId: e.servico_avulso_id,
+          inicio: e.inicio,
+          fim: e.fim,
+          status: e.status,
         })),
         ocorrencias: (oco || []).map(o => ({
           id: o.id,
@@ -460,7 +478,7 @@ export const useStore = create<State>((set, get) => ({
   },
 
   addFuncionario: async (f) => {
-    await supabase.from('funcionarios').insert({
+    const { error } = await supabase.from('funcionarios').insert({
       nome: f.nome,
       cpf: f.cpf,
       cargo: f.cargo,
@@ -471,17 +489,58 @@ export const useStore = create<State>((set, get) => ({
       admissao: f.admissao,
       status: f.status,
       telefone: f.telefone,
-      aso_validade: f.asoValidade
+      aso_validade: f.asoValidade,
+      pix: f.pix,
     })
-    await get().fetchData()
+    if (!error) get().fetchData()
   },
   updateFuncionario: async (id, patch) => {
-    await supabase.from('funcionarios').update({ status: patch.status }).eq('id', id)
-    await get().fetchData()
+    const { error } = await supabase.from('funcionarios').update({
+      nome: patch.nome,
+      cpf: patch.cpf,
+      cargo: patch.cargo,
+      contrato_id: patch.contratoId,
+      posto_nome: patch.postoNome,
+      turno: patch.turno,
+      salario: patch.salario,
+      admissao: patch.admissao,
+      status: patch.status,
+      telefone: patch.telefone,
+      aso_validade: patch.asoValidade,
+      pix: patch.pix,
+    }).eq('id', id)
+    if (!error) get().fetchData()
   },
   removeFuncionario: async (id) => {
-    await supabase.from('funcionarios').delete().eq('id', id)
-    await get().fetchData()
+    const { error } = await supabase.from('funcionarios').delete().eq('id', id)
+    if (!error) get().fetchData()
+  },
+
+  addEscala: async (e) => {
+    const { error } = await supabase.from('escalas').insert({
+      data: e.data,
+      funcionario_id: e.funcionarioId,
+      posto_nome: e.postoNome,
+      contrato_id: e.contratoId,
+      servico_avulso_id: e.servicoAvulsoId,
+      inicio: e.inicio,
+      fim: e.fim,
+      status: e.status,
+    })
+    if (!error) get().fetchData()
+  },
+  updateEscala: async (id, patch) => {
+    const { error } = await supabase.from('escalas').update({
+      status: patch.status,
+      inicio: patch.inicio,
+      fim: patch.fim,
+      posto_nome: patch.postoNome,
+    }).eq('id', id)
+    if (!error) get().fetchData()
+  },
+  removeEscala: async (id) => {
+    const { error } = await supabase.from('escalas').delete().eq('id', id)
+    if (!error) get().fetchData()
   },
 
   addOcorrencia: async (o) => {

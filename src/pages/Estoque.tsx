@@ -19,7 +19,6 @@ export function Estoque() {
   const [movItem, setMovItem] = useState<ItemEstoque | null>(null)
 
   const categorias = useMemo(() => Array.from(new Set(estoque.map((i) => i.categoria))), [estoque])
-
   const lista = useMemo(() =>
     estoque.filter((i) => {
       const b = [i.sku, i.nome].some((v) => v.toLowerCase().includes(busca.toLowerCase()))
@@ -28,18 +27,42 @@ export function Estoque() {
     }), [estoque, busca, filtroCat],
   )
 
+  const totalItens = estoque.length
+  const abaixoMinimo = estoque.filter((i) => i.quantidade < i.estoqueMinimo).length
+  const numCategorias = new Set(estoque.map((i) => i.categoria)).size
+  const custoTotalEstoque = estoque.reduce((acc, item) => acc + (item.custoUnitario * item.quantidade), 0)
+
   const baixos = estoque.filter((i) => i.quantidade < i.estoqueMinimo)
-  const valorTotal = estoque.reduce((a, i) => a + i.quantidade * i.custoUnitario, 0)
 
   return (
     <>
-      <Header title="Estoque" subtitle={`${estoque.length} itens · ${formatBRL(valorTotal)} em estoque`} />
+      <Header title="Estoque" subtitle="Controle de materiais e insumos" />
       <div className="p-6 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card><CardContent><div className="text-xs text-slate-500">Total itens</div><div className="text-2xl font-bold text-slate-900">{estoque.length}</div></CardContent></Card>
-          <Card><CardContent><div className="text-xs text-slate-500">Valor em estoque</div><div className="text-2xl font-bold text-slate-900">{formatBRL(valorTotal)}</div></CardContent></Card>
-          <Card><CardContent><div className="text-xs text-slate-500">Abaixo do mínimo</div><div className="text-2xl font-bold text-red-600">{baixos.length}</div></CardContent></Card>
-          <Card><CardContent><div className="text-xs text-slate-500">Categorias</div><div className="text-2xl font-bold text-slate-900">{categorias.length}</div></CardContent></Card>
+          <Card>
+            <CardContent>
+              <div className="text-xs text-slate-500">Total itens</div>
+              <div className="text-2xl font-bold text-slate-900">{totalItens}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <div className="text-xs text-slate-500">Valor em estoque</div>
+              <div className="text-2xl font-bold text-emerald-600">{formatBRL(custoTotalEstoque)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <div className="text-xs text-slate-500">Abaixo do mínimo</div>
+              <div className="text-2xl font-bold text-red-600">{abaixoMinimo}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <div className="text-xs text-slate-500">Categorias</div>
+              <div className="text-2xl font-bold text-slate-900">{numCategorias}</div>
+            </CardContent>
+          </Card>
         </div>
 
         {baixos.length > 0 && (

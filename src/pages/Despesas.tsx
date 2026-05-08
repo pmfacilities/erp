@@ -131,11 +131,12 @@ export function Despesas() {
           </CardContent>
         </Card>
 
-        <Card className="p-0">
-          {filtradas.length === 0 ? (
-            <EmptyState title="Nenhuma despesa encontrada" description="Ajuste os filtros ou cadastre uma nova despesa" />
-          ) : (
-            <Table>
+        <Card className="p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            {filtradas.length === 0 ? (
+              <EmptyState title="Nenhuma despesa encontrada" description="Ajuste os filtros ou cadastre uma nova despesa" />
+            ) : (
+              <Table>
               <THead>
                 <TR>
                   <TH>Data</TH>
@@ -196,8 +197,9 @@ export function Despesas() {
                   <TD colSpan={2} />
                 </TR>
               </TBody>
-            </Table>
-          )}
+              </Table>
+            )}
+          </div>
         </Card>
       </div>
 

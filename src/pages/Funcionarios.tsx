@@ -79,11 +79,12 @@ export function Funcionarios() {
           </CardContent>
         </Card>
 
-        <Card className="p-0">
-          {filtrados.length === 0 ? (
-            <EmptyState title="Nenhum funcionário encontrado" />
-          ) : (
-            <Table>
+        <Card className="p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            {filtrados.length === 0 ? (
+              <EmptyState title="Nenhum funcionário encontrado" />
+            ) : (
+              <Table>
               <THead>
                 <TR>
                   <TH>Nome</TH>
@@ -92,6 +93,7 @@ export function Funcionarios() {
                   <TH>Contrato / Posto</TH>
                   <TH>Turno</TH>
                   <TH>Salário</TH>
+                  <TH>PIX</TH>
                   <TH>ASO</TH>
                   <TH>Status</TH>
                   <TH className="text-right">Ações</TH>
@@ -121,6 +123,7 @@ export function Funcionarios() {
                       </TD>
                       <TD className="text-xs">{turnoLabel(f.turno)}</TD>
                       <TD className="text-sm">{formatBRL(f.salario)}</TD>
+                      <TD className="text-xs text-slate-500 truncate max-w-[120px]" title={f.pix}>{f.pix || '—'}</TD>
                       <TD className="text-xs">
                         <div className={diasAso < 30 ? 'text-red-600 font-semibold' : diasAso < 60 ? 'text-amber-600' : 'text-slate-600'}>
                           {formatDate(f.asoValidade)}
@@ -148,8 +151,9 @@ export function Funcionarios() {
                   )
                 })}
               </TBody>
-            </Table>
-          )}
+              </Table>
+            )}
+          </div>
         </Card>
       </div>
 
@@ -265,6 +269,10 @@ function FuncionarioDialog({
           <Select value={form.status} onChange={(e) => set('status', e.target.value)}>
             {STATUS_OPCOES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </Select>
+        </div>
+        <div className="col-span-2">
+          <Label>Chave PIX</Label>
+          <Input value={form.pix || ''} onChange={(e) => set('pix', e.target.value)} placeholder="E-mail, CPF, Celular ou Aleatória" />
         </div>
       </div>
     </Dialog>
