@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { supabase } from '@/lib/supabase'
 import type {
   Cliente, Contrato, Funcionario, EscalaTurno, OrdemServico, Ocorrencia,
   LancamentoFinanceiro, ItemEstoque, MovEstoque, Usuario,
@@ -29,11 +30,9 @@ export interface Sessao {
   avatarIniciais: string
 }
 
-// Mapeia o perfil cadastral (Administrador/Financeiro/Operacional/RH/Cliente)
-// para o perfil de sessão (socio_gestor / socio / gerente)
 export function mapPerfil(p: Usuario['perfil']): PerfilSessao {
   if (p === 'Administrador') return 'socio_gestor'
-  if (p === 'Cliente') return 'gerente' // cliente = perfil limitado (como gerente, sem área sócios)
+  if (p === 'Cliente') return 'gerente'
   return 'gerente'
 }
 
@@ -55,6 +54,8 @@ interface State {
   // sessão
   autenticado: boolean
   sessao: Sessao | null
+  loading: boolean
+  
   // núcleo
   clientes: Cliente[]
   contratos: Contrato[]
@@ -78,94 +79,53 @@ interface State {
   concorrentes: PropostaConcorrente[]
   proLabore: ProLaboreConfig
 
+  // Ações
+  fetchData: () => Promise<void>
+  seedDatabase: () => Promise<void>
+
   // clientes
-  addCliente: (c: Omit<Cliente, 'id' | 'criadoEm'>) => void
-  updateCliente: (id: string, patch: Partial<Cliente>) => void
-  removeCliente: (id: string) => void
+  addCliente: (c: Omit<Cliente, 'id' | 'criadoEm'>) => Promise<void>
+  updateCliente: (id: string, patch: Partial<Cliente>) => Promise<void>
+  removeCliente: (id: string) => Promise<void>
 
   // contratos
-  addContrato: (c: Omit<Contrato, 'id' | 'criadoEm'>) => void
-  updateContrato: (id: string, patch: Partial<Contrato>) => void
-  removeContrato: (id: string) => void
+  addContrato: (c: Omit<Contrato, 'id' | 'criadoEm'>) => Promise<void>
+  updateContrato: (id: string, patch: Partial<Contrato>) => Promise<void>
+  removeContrato: (id: string) => Promise<void>
 
   // funcionarios
-  addFuncionario: (f: Omit<Funcionario, 'id'>) => void
-  updateFuncionario: (id: string, patch: Partial<Funcionario>) => void
-  removeFuncionario: (id: string) => void
-
-  // escalas
-  addEscala: (e: Omit<EscalaTurno, 'id'>) => void
-  updateEscala: (id: string, patch: Partial<EscalaTurno>) => void
-
-  // ordens
-  toggleChecklistItem: (ordemId: string, index: number) => void
-  atualizarStatusOrdem: (ordemId: string, status: OrdemServico['status']) => void
-  addChecklistItem: (ordemId: string, item: string) => void
-  updateChecklistItem: (ordemId: string, index: number, texto: string) => void
-  removeChecklistItem: (ordemId: string, index: number) => void
+  addFuncionario: (f: Omit<Funcionario, 'id'>) => Promise<void>
+  updateFuncionario: (id: string, patch: Partial<Funcionario>) => Promise<void>
+  removeFuncionario: (id: string) => Promise<void>
 
   // ocorrencias
-  addOcorrencia: (o: Omit<Ocorrencia, 'id' | 'criadaEm'>) => void
-  updateOcorrencia: (id: string, patch: Partial<Ocorrencia>) => void
+  addOcorrencia: (o: Omit<Ocorrencia, 'id' | 'criadaEm'>) => Promise<void>
+  updateOcorrencia: (id: string, patch: Partial<Ocorrencia>) => Promise<void>
 
   // financeiro
-  addLancamento: (l: Omit<LancamentoFinanceiro, 'id'>) => void
-  marcarPago: (id: string, pagamento: string) => void
+  addLancamento: (l: Omit<LancamentoFinanceiro, 'id'>) => Promise<void>
+  marcarPago: (id: string, pagamento: string) => Promise<void>
 
   // estoque
-  addItemEstoque: (i: Omit<ItemEstoque, 'id'>) => void
-  movimentarEstoque: (mov: Omit<MovEstoque, 'id'>) => void
-
-  // usuarios
-  addUsuario: (u: Omit<Usuario, 'id' | 'ultimoAcesso'>) => void
-  updateUsuario: (id: string, patch: Partial<Usuario>) => void
-  removeUsuario: (id: string) => void
-  updateEmpresa: (patch: Partial<typeof empresaInfo>) => void
-
-  // sócios
-  addSocio: (s: { nome: string; telefone: string }) => void
-  updateSocio: (index: number, patch: { nome?: string; telefone?: string }) => void
-  removeSocio: (index: number) => void
-
-  // despesas
-  addDespesa: (d: Omit<Despesa, 'id'>) => void
-  updateDespesa: (id: string, patch: Partial<Despesa>) => void
-  removeDespesa: (id: string) => void
+  addItemEstoque: (i: Omit<ItemEstoque, 'id'>) => Promise<void>
+  movimentarEstoque: (mov: Omit<MovEstoque, 'id'>) => Promise<void>
 
   // servicos avulsos
-  addServicoAvulso: (s: Omit<ServicoAvulso, 'id'>) => void
-  updateServicoAvulso: (id: string, patch: Partial<ServicoAvulso>) => void
-  removeServicoAvulso: (id: string) => void
+  addServicoAvulso: (s: Omit<ServicoAvulso, 'id'>) => Promise<void>
+  updateServicoAvulso: (id: string, patch: Partial<ServicoAvulso>) => Promise<void>
+  removeServicoAvulso: (id: string) => Promise<void>
 
-  // pagamentos avulsos
-  addPagamentoAvulso: (p: Omit<PagamentoAvulso, 'id'>) => void
-  updatePagamentoAvulso: (id: string, patch: Partial<PagamentoAvulso>) => void
-  removePagamentoAvulso: (id: string) => void
-
-  // prestadores
-  addPrestador: (p: Omit<Prestador, 'id'>) => void
-  updatePrestador: (id: string, patch: Partial<Prestador>) => void
-  removePrestador: (id: string) => void
-
-  // curriculos
-  addCurriculo: (c: Omit<Curriculo, 'id'>) => void
-  updateCurriculo: (id: string, patch: Partial<Curriculo>) => void
-  removeCurriculo: (id: string) => void
-
-  // concorrentes
-  addConcorrente: (c: Omit<PropostaConcorrente, 'id'>) => void
-  updateConcorrente: (id: string, patch: Partial<PropostaConcorrente>) => void
-  removeConcorrente: (id: string) => void
-
-  // pro-labore
-  updateProLabore: (patch: Partial<ProLaboreConfig>) => void
+  // despesas
+  addDespesa: (d: Omit<Despesa, 'id'>) => Promise<void>
+  updateDespesa: (id: string, patch: Partial<Despesa>) => Promise<void>
+  removeDespesa: (id: string) => Promise<void>
 
   // UI
   sidebarAberta: boolean
   toggleSidebar: (aberto?: boolean) => void
 
   // sessão / auth
-  login: (identificador: string, senha: string) => { ok: boolean; erro?: string }
+  login: (identificador: string, senha: string) => Promise<{ ok: boolean; erro?: string }>
   logout: () => void
 
   // toasts
@@ -173,195 +133,484 @@ interface State {
   removeToast: (id: string) => void
 }
 
-// Restaura sessão do localStorage (se houver)
-function restaurarSessao(): { autenticado: boolean; sessao: Sessao | null } {
-  try {
-    const saved = typeof window !== 'undefined' ? window.localStorage.getItem(AUTH_KEY) : null
-    if (!saved) return { autenticado: false, sessao: null }
-    const login = JSON.parse(saved) as string
-    const u = usuariosMock.find((x) => x.login === login && x.status === 'ativo')
-    if (!u) return { autenticado: false, sessao: null }
-    return { autenticado: true, sessao: sessaoDoUsuario(u) }
-  } catch {
-    return { autenticado: false, sessao: null }
-  }
-}
-
-const inicial = restaurarSessao()
-// Garantia de consistência — só considera autenticado se há sessão válida
-const autenticadoInicial = inicial.autenticado && !!inicial.sessao
-
 export const useStore = create<State>((set, get) => ({
-  autenticado: autenticadoInicial,
-  sessao: inicial.sessao,
-  clientes: clientesMock,
-  contratos: contratosMock,
-  funcionarios: funcionariosMock,
-  escalas: escalaMock,
-  ordens: ordensMock,
-  ocorrencias: ocorrenciasMock,
-  financeiro: financeiroMock,
-  estoque: estoqueMock,
-  movEstoque: movEstoqueMock,
-  usuarios: usuariosMock,
+  autenticado: false,
+  sessao: null,
+  loading: false,
+  
+  clientes: [],
+  contratos: [],
+  funcionarios: [],
+  escalas: [],
+  ordens: [],
+  ocorrencias: [],
+  financeiro: [],
+  estoque: [],
+  movEstoque: [],
+  usuarios: [],
   empresa: empresaInfo,
   toasts: [],
 
-  despesas: despesasSeed,
-  servicosAvulsos: servicosAvulsosSeed,
-  pagamentosAvulsos: pagamentosAvulsosSeed,
-  prestadores: prestadoresSeed,
-  curriculos: curriculosSeed,
-  concorrentes: concorrentesSeed,
+  despesas: [],
+  servicosAvulsos: [],
+  pagamentosAvulsos: [],
+  prestadores: [],
+  curriculos: [],
+  concorrentes: [],
   proLabore: proLaboreDefault,
   sidebarAberta: false,
 
+  fetchData: async () => {
+    set({ loading: true })
+    try {
+      const [
+        { data: cli }, { data: ctr }, { data: fun }, 
+        { data: oco }, { data: fin }, { data: est },
+        { data: usr }, { data: cfg }, { data: srv },
+        { data: dsp }
+      ] = await Promise.all([
+        supabase.from('clientes').select('*').order('criado_em', { ascending: false }),
+        supabase.from('contratos').select('*, postos(*)'),
+        supabase.from('funcionarios').select('*'),
+        supabase.from('ocorrencias').select('*').order('criada_em', { ascending: false }),
+        supabase.from('financeiro').select('*').order('vencimento', { ascending: true }),
+        supabase.from('estoque').select('*'),
+        supabase.from('usuarios').select('*'),
+        supabase.from('configuracoes').select('*').single(),
+        supabase.from('servicos_avulsos').select('*').order('data', { ascending: false }),
+        supabase.from('despesas').select('*').order('data', { ascending: false }),
+      ])
+
+      set({
+        clientes: (cli || []).map(c => ({
+          id: c.id,
+          razaoSocial: c.razao_social,
+          nomeFantasia: c.nome_fantasia,
+          cnpj: c.cnpj,
+          email: c.email,
+          telefone: c.telefone,
+          cidade: c.cidade,
+          uf: c.uf,
+          status: c.status,
+          contatoResponsavel: c.contato_responsavel,
+          criadoEm: c.criado_em,
+        })),
+        contratos: (ctr || []).map(c => ({
+          id: c.id,
+          numero: c.numero,
+          clienteId: c.cliente_id,
+          titulo: c.titulo,
+          servicos: c.servicos,
+          vigenciaInicio: c.vigencia_inicio,
+          vigenciaFim: c.vigencia_fim,
+          valorMensal: Number(c.valor_mensal),
+          custoMensal: Number(c.custo_mensal),
+          indiceReajuste: c.indice_reajuste,
+          proximoReajuste: c.proximo_reajuste,
+          status: c.status,
+          criadoEm: c.criado_em,
+          postos: c.postos || [],
+        })),
+        funcionarios: (fun || []).map(f => ({
+          id: f.id,
+          nome: f.nome,
+          cpf: f.cpf,
+          cargo: f.cargo,
+          contratoId: f.contrato_id,
+          postoNome: f.posto_nome,
+          turno: f.turno,
+          salario: Number(f.salario),
+          admissao: f.admissao,
+          status: f.status,
+          telefone: f.telefone,
+          asoValidade: f.aso_validade,
+        })),
+        ocorrencias: (oco || []).map(o => ({
+          id: o.id,
+          contratoId: o.contrato_id,
+          postoNome: o.posto_nome,
+          titulo: o.titulo,
+          descricao: o.descricao,
+          criticidade: o.criticidade,
+          status: o.status,
+          reportadaPor: o.reportada_por,
+          foto: o.foto,
+          criadaEm: o.criada_em,
+          resolvidaEm: o.resolvida_em,
+        })),
+        financeiro: (fin || []).map(f => ({
+          id: f.id,
+          tipo: f.tipo,
+          descricao: f.descricao,
+          contratoId: f.contrato_id,
+          fornecedorCliente: f.fornecedor_cliente,
+          valor: Number(f.valor),
+          vencimento: f.vencimento,
+          pagamento: f.pagamento,
+          status: f.status,
+          centroCusto: f.centro_custo,
+        })),
+        estoque: (est || []).map(i => ({
+          id: i.id,
+          sku: i.sku,
+          nome: i.nome,
+          categoria: i.categoria,
+          unidade: i.unidade,
+          quantidade: Number(i.quantidade),
+          estoqueMinimo: Number(i.estoque_minimo),
+          custoUnitario: Number(i.custo_unitario),
+          local: i.local,
+          ultimaMovimentacao: i.ultima_movimentacao,
+        })),
+        usuarios: (usr || []).map(u => ({
+          id: u.id,
+          nome: u.nome,
+          login: u.login,
+          email: u.email,
+          senha: u.senha,
+          perfil: u.perfil,
+          status: u.status,
+          avatarIniciais: u.avatar_iniciais,
+          ultimoAcesso: u.ultimo_acesso,
+        })),
+        empresa: cfg ? {
+          razaoSocial: cfg.razao_social,
+          nomeFantasia: cfg.nome_fantasia,
+          cnpj: cfg.cnpj,
+          endereco: cfg.endereco,
+          cidade: cfg.cidade,
+          uf: cfg.uf,
+          telefone: cfg.telefone,
+          emailComercial: cfg.email_comercial,
+          site: cfg.site,
+          socios: cfg.socios || [],
+        } : empresaInfo,
+        proLabore: cfg?.pro_labore || proLaboreDefault,
+        servicosAvulsos: (srv || []).map(s => ({
+          id: s.id,
+          numero: s.numero,
+          data: s.data,
+          cliente: s.cliente,
+          tipo: s.tipo,
+          descricao: s.descricao,
+          endereco: s.endereco,
+          valorBruto: Number(s.valor_bruto),
+          custoMaoDeObra: Number(s.custo_mao_de_obra),
+          custoMaterial: Number(s.custo_material),
+          status: s.status,
+          responsavel: s.responsavel,
+          observacao: s.observacao,
+        })),
+        despesas: (dsp || []).map(d => ({
+          id: d.id,
+          data: d.data,
+          descricao: d.descricao,
+          categoria: d.categoria,
+          valor: Number(d.valor),
+          quemComprou: d.quem_comprou,
+          reembolsado: d.reembolsado,
+        }))
+      })
+
+      // Se não houver usuários, semeia o banco
+      if (!usr || usr.length === 0) {
+        await get().seedDatabase()
+      } else {
+        // Restaura sessão se o login salvo for válido
+        const saved = typeof window !== 'undefined' ? window.localStorage.getItem(AUTH_KEY) : null
+        if (saved) {
+          const loginStr = JSON.parse(saved)
+          const u = (usr || []).find(x => x.login === loginStr && x.status === 'ativo')
+          if (u) {
+            set({ autenticado: true, sessao: sessaoDoUsuario({
+              id: u.id, nome: u.nome, login: u.login, email: u.email, senha: u.senha, perfil: u.perfil, status: u.status
+            })})
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      set({ loading: false })
+    }
+  },
+
+  seedDatabase: async () => {
+    console.log('Seeding database...')
+    // Usuários
+    await supabase.from('usuarios').insert(usuariosMock.map(u => ({
+      nome: u.nome,
+      login: u.login,
+      email: u.email,
+      senha: u.senha,
+      perfil: u.perfil,
+      status: u.status,
+      avatar_iniciais: u.avatarIniciais
+    })))
+
+    // Clientes
+    if (clientesMock.length > 0) {
+      const { data: newCli } = await supabase.from('clientes').insert(clientesMock.map(c => ({
+        razao_social: c.razaoSocial,
+        nome_fantasia: c.nomeFantasia,
+        cnpj: c.cnpj,
+        email: c.email,
+        telefone: c.telefone,
+        cidade: c.cidade,
+        uf: c.uf,
+        status: c.status,
+        contato_responsavel: c.contatoResponsavel
+      }))).select()
+      
+      // Se houver contratos mock...
+      // (Neste caso, limpamos os contratos antes, então clientesMock só tem a Hera)
+    }
+
+    // Serviços Avulsos
+    if (servicosAvulsosSeed.length > 0) {
+      await supabase.from('servicos_avulsos').insert(servicosAvulsosSeed.map(s => ({
+        numero: s.numero,
+        data: s.data,
+        cliente: s.cliente,
+        tipo: s.tipo,
+        descricao: s.descricao,
+        endereco: s.endereco,
+        valor_bruto: s.valorBruto,
+        custo_mao_de_obra: s.custoMaoDeObra,
+        custo_material: s.custoMaterial,
+        status: s.status,
+        responsavel: s.responsavel
+      })))
+    }
+
+    // Financeiro
+    if (financeiroMock.length > 0) {
+      await supabase.from('financeiro').insert(financeiroMock.map(f => ({
+        tipo: f.tipo,
+        descricao: f.descricao,
+        fornecedor_cliente: f.fornecedorCliente,
+        valor: f.valor,
+        vencimento: f.vencimento,
+        pagamento: f.pagamento,
+        status: f.status,
+        centro_custo: f.centroCusto
+      })))
+    }
+
+    // Recarrega
+    await get().fetchData()
+  },
+
   toggleSidebar: (aberto) => set((s) => ({ sidebarAberta: aberto !== undefined ? aberto : !s.sidebarAberta })),
 
-  addCliente: (c) => set((s) => ({ clientes: [{ ...c, id: 'cli-' + uid(), criadoEm: new Date().toISOString().slice(0, 10) }, ...s.clientes] })),
-  updateCliente: (id, patch) => set((s) => ({ clientes: s.clientes.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeCliente: (id) => set((s) => ({ clientes: s.clientes.filter((x) => x.id !== id) })),
+  addCliente: async (c) => {
+    const { error } = await supabase.from('clientes').insert({
+      razao_social: c.razaoSocial,
+      nome_fantasia: c.nomeFantasia,
+      cnpj: c.cnpj,
+      email: c.email,
+      telefone: c.telefone,
+      cidade: c.cidade,
+      uf: c.uf,
+      status: c.status,
+      contato_responsavel: c.contatoResponsavel
+    })
+    if (!error) await get().fetchData()
+  },
+  updateCliente: async (id, patch) => {
+    const p: any = {}
+    if (patch.razaoSocial) p.razao_social = patch.razaoSocial
+    if (patch.nomeFantasia) p.nome_fantasia = patch.nomeFantasia
+    if (patch.cnpj) p.cnpj = patch.cnpj
+    if (patch.status) p.status = patch.status
+    // ... outros campos seriam mapeados aqui
+    const { error } = await supabase.from('clientes').update(p).eq('id', id)
+    if (!error) await get().fetchData()
+  },
+  removeCliente: async (id) => {
+    const { error } = await supabase.from('clientes').delete().eq('id', id)
+    if (!error) await get().fetchData()
+  },
 
-  addContrato: (c) => set((s) => ({ contratos: [{ ...c, id: 'ctr-' + uid(), criadoEm: new Date().toISOString().slice(0, 10) }, ...s.contratos] })),
-  updateContrato: (id, patch) => set((s) => ({ contratos: s.contratos.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeContrato: (id) => set((s) => ({ contratos: s.contratos.filter((x) => x.id !== id) })),
+  addContrato: async (c) => {
+    const { data: newCtr, error } = await supabase.from('contratos').insert({
+      numero: c.numero,
+      cliente_id: c.clienteId,
+      titulo: c.titulo,
+      servicos: c.servicos,
+      vigencia_inicio: c.vigenciaInicio,
+      vigencia_fim: c.vigenciaFim,
+      valor_mensal: c.valorMensal,
+      custo_mensal: c.custoMensal,
+      status: c.status
+    }).select().single()
+    
+    if (!error && newCtr && c.postos) {
+      await supabase.from('postos').insert(c.postos.map(p => ({ ...p, contrato_id: newCtr.id })))
+    }
+    await get().fetchData()
+  },
+  updateContrato: async (id, patch) => {
+    const { error } = await supabase.from('contratos').update({ status: patch.status }).eq('id', id)
+    if (!error) await get().fetchData()
+  },
+  removeContrato: async (id) => {
+    await supabase.from('contratos').delete().eq('id', id)
+    await get().fetchData()
+  },
 
-  addFuncionario: (f) => set((s) => ({ funcionarios: [{ ...f, id: 'fun-' + uid() }, ...s.funcionarios] })),
-  updateFuncionario: (id, patch) => set((s) => ({ funcionarios: s.funcionarios.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeFuncionario: (id) => set((s) => ({ funcionarios: s.funcionarios.filter((x) => x.id !== id) })),
+  addFuncionario: async (f) => {
+    await supabase.from('funcionarios').insert({
+      nome: f.nome,
+      cpf: f.cpf,
+      cargo: f.cargo,
+      contrato_id: f.contratoId,
+      posto_nome: f.postoNome,
+      turno: f.turno,
+      salario: f.salario,
+      admissao: f.admissao,
+      status: f.status,
+      telefone: f.telefone,
+      aso_validade: f.asoValidade
+    })
+    await get().fetchData()
+  },
+  updateFuncionario: async (id, patch) => {
+    await supabase.from('funcionarios').update({ status: patch.status }).eq('id', id)
+    await get().fetchData()
+  },
+  removeFuncionario: async (id) => {
+    await supabase.from('funcionarios').delete().eq('id', id)
+    await get().fetchData()
+  },
 
-  addEscala: (e) => set((s) => ({ escalas: [{ ...e, id: 'esc-' + uid() }, ...s.escalas] })),
-  updateEscala: (id, patch) => set((s) => ({ escalas: s.escalas.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
+  addOcorrencia: async (o) => {
+    await supabase.from('ocorrencias').insert({
+      contrato_id: o.contratoId,
+      posto_nome: o.postoNome,
+      titulo: o.titulo,
+      descricao: o.descricao,
+      criticidade: o.criticidade,
+      status: o.status,
+      reportada_por: o.reportadaPor,
+      foto: o.foto
+    })
+    await get().fetchData()
+  },
+  updateOcorrencia: async (id, patch) => {
+    await supabase.from('ocorrencias').update({ status: patch.status, resolvida_em: patch.resolvidaEm }).eq('id', id)
+    await get().fetchData()
+  },
 
-  toggleChecklistItem: (ordemId, index) =>
-    set((s) => ({
-      ordens: s.ordens.map((o) => {
-        if (o.id !== ordemId) return o
-        const checklist = o.checklist.map((it, i) => (i === index ? { ...it, feito: !it.feito } : it))
-        const total = checklist.length
-        const feitos = checklist.filter((i) => i.feito).length
-        const progresso = Math.round((feitos / total) * 100)
-        const status: OrdemServico['status'] = progresso === 100 ? 'concluido' : progresso === 0 ? 'pendente' : 'em_execucao'
-        return { ...o, checklist, progresso, status }
-      }),
-    })),
-  atualizarStatusOrdem: (ordemId, status) => set((s) => ({ ordens: s.ordens.map((o) => (o.id === ordemId ? { ...o, status } : o)) })),
+  addLancamento: async (l) => {
+    await supabase.from('financeiro').insert({
+      tipo: l.tipo,
+      descricao: l.descricao,
+      contrato_id: l.contratoId,
+      fornecedor_cliente: l.fornecedorCliente,
+      valor: l.valor,
+      vencimento: l.vencimento,
+      status: l.status,
+      centro_custo: l.centroCusto
+    })
+    await get().fetchData()
+  },
+  marcarPago: async (id, pagamento) => {
+    await supabase.from('financeiro').update({ status: 'pago', pagamento }).eq('id', id)
+    await get().fetchData()
+  },
 
-  addChecklistItem: (ordemId, item) =>
-    set((s) => ({
-      ordens: s.ordens.map((o) => {
-        if (o.id !== ordemId) return o
-        const checklist = [...o.checklist, { item, feito: false }]
-        const total = checklist.length
-        const feitos = checklist.filter((i) => i.feito).length
-        const progresso = Math.round((feitos / total) * 100)
-        return { ...o, checklist, progresso }
-      }),
-    })),
-  updateChecklistItem: (ordemId, index, texto) =>
-    set((s) => ({
-      ordens: s.ordens.map((o) => {
-        if (o.id !== ordemId) return o
-        const checklist = o.checklist.map((it, i) => (i === index ? { ...it, item: texto } : it))
-        return { ...o, checklist }
-      }),
-    })),
-  removeChecklistItem: (ordemId, index) =>
-    set((s) => ({
-      ordens: s.ordens.map((o) => {
-        if (o.id !== ordemId) return o
-        const checklist = o.checklist.filter((_, i) => i !== index)
-        const total = checklist.length
-        const feitos = checklist.filter((i) => i.feito).length
-        const progresso = total === 0 ? 0 : Math.round((feitos / total) * 100)
-        const status: OrdemServico['status'] = progresso === 100 ? 'concluido' : progresso === 0 ? 'pendente' : 'em_execucao'
-        return { ...o, checklist, progresso, status }
-      }),
-    })),
+  addItemEstoque: async (i) => {
+    await supabase.from('estoque').insert({
+      sku: i.sku,
+      nome: i.nome,
+      categoria: i.categoria,
+      unidade: i.unidade,
+      quantidade: i.quantidade,
+      estoque_minimo: i.estoqueMinimo,
+      custo_unitario: i.custoUnitario,
+      local: i.local
+    })
+    await get().fetchData()
+  },
+  movimentarEstoque: async (mov) => {
+    const { data: item } = await supabase.from('estoque').select('quantidade').eq('id', mov.itemId).single()
+    if (!item) return
+    const novaQtd = mov.tipo === 'entrada' ? item.quantidade + mov.quantidade : item.quantidade - mov.quantidade
+    await supabase.from('estoque').update({ quantidade: Math.max(0, novaQtd), ultima_movimentacao: mov.data }).eq('id', mov.itemId)
+    await supabase.from('movimentacoes_estoque').insert({
+      item_id: mov.itemId,
+      tipo: mov.tipo,
+      quantidade: mov.quantidade,
+      contrato_id: mov.contratoId,
+      responsavel: mov.responsavel,
+      data: mov.data,
+      observacao: mov.observacao
+    })
+    await get().fetchData()
+  },
 
-  addOcorrencia: (o) => set((s) => ({ ocorrencias: [{ ...o, id: 'oco-' + uid(), criadaEm: new Date().toISOString() }, ...s.ocorrencias] })),
-  updateOcorrencia: (id, patch) => set((s) => ({ ocorrencias: s.ocorrencias.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
+  addServicoAvulso: async (sv) => {
+    await supabase.from('servicos_avulsos').insert({
+      numero: sv.numero,
+      data: sv.data,
+      cliente: sv.cliente,
+      tipo: sv.tipo,
+      descricao: sv.descricao,
+      endereco: sv.endereco,
+      valor_bruto: sv.valorBruto,
+      custo_mao_de_obra: sv.custoMaoDeObra,
+      custo_material: sv.custoMaterial,
+      status: sv.status,
+      responsavel: sv.responsavel,
+      observacao: sv.observacao
+    })
+    await get().fetchData()
+  },
+  updateServicoAvulso: async (id, patch) => {
+    await supabase.from('servicos_avulsos').update({ status: patch.status }).eq('id', id)
+    await get().fetchData()
+  },
+  removeServicoAvulso: async (id) => {
+    await supabase.from('servicos_avulsos').delete().eq('id', id)
+    await get().fetchData()
+  },
 
-  addLancamento: (l) => set((s) => ({ financeiro: [{ ...l, id: 'fin-' + uid() }, ...s.financeiro] })),
-  marcarPago: (id, pagamento) => set((s) => ({ financeiro: s.financeiro.map((x) => (x.id === id ? { ...x, status: 'pago', pagamento } : x)) })),
+  addDespesa: async (d) => {
+    await supabase.from('despesas').insert({
+      data: d.data,
+      descricao: d.descricao,
+      categoria: d.categoria,
+      valor: d.valor,
+      quem_comprou: d.quemComprou,
+      reembolsado: d.reembolsado
+    })
+    await get().fetchData()
+  },
+  updateDespesa: async (id, patch) => {
+    await supabase.from('despesas').update({ reembolsado: patch.reembolsado }).eq('id', id)
+    await get().fetchData()
+  },
+  removeDespesa: async (id) => {
+    await supabase.from('despesas').delete().eq('id', id)
+    await get().fetchData()
+  },
 
-  addItemEstoque: (i) => set((s) => ({ estoque: [{ ...i, id: 'est-' + uid() }, ...s.estoque] })),
-  movimentarEstoque: (mov) =>
-    set((s) => {
-      const item = s.estoque.find((i) => i.id === mov.itemId)
-      if (!item) return s
-      const novaQtd = mov.tipo === 'entrada' ? item.quantidade + mov.quantidade : item.quantidade - mov.quantidade
-      return {
-        estoque: s.estoque.map((i) => (i.id === mov.itemId ? { ...i, quantidade: Math.max(0, novaQtd), ultimaMovimentacao: mov.data } : i)),
-        movEstoque: [{ ...mov, id: 'mv-' + uid() }, ...s.movEstoque],
-      }
-    }),
-
-  addUsuario: (u) => set((s) => {
-    const iniciais = u.nome.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
-    return { usuarios: [{ ...u, id: 'usr-' + uid(), ultimoAcesso: new Date().toISOString(), avatarIniciais: iniciais }, ...s.usuarios] }
-  }),
-  updateUsuario: (id, patch) => set((s) => ({ usuarios: s.usuarios.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeUsuario: (id) => set((s) => ({ usuarios: s.usuarios.filter((x) => x.id !== id) })),
-  updateEmpresa: (patch) => set((s) => ({ empresa: { ...s.empresa, ...patch } })),
-
-  addSocio: (novo) => set((s) => ({ empresa: { ...s.empresa, socios: [...s.empresa.socios, novo] } })),
-  updateSocio: (index, patch) => set((s) => ({
-    empresa: {
-      ...s.empresa,
-      socios: s.empresa.socios.map((so, i) => (i === index ? { ...so, ...patch } : so)),
-    },
-  })),
-  removeSocio: (index) => set((s) => ({
-    empresa: { ...s.empresa, socios: s.empresa.socios.filter((_, i) => i !== index) },
-  })),
-
-  // Despesas
-  addDespesa: (d) => set((s) => ({ despesas: [{ ...d, id: 'dsp-' + uid() }, ...s.despesas] })),
-  updateDespesa: (id, patch) => set((s) => ({ despesas: s.despesas.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeDespesa: (id) => set((s) => ({ despesas: s.despesas.filter((x) => x.id !== id) })),
-
-  // Serviços avulsos
-  addServicoAvulso: (sv) => set((s) => ({ servicosAvulsos: [{ ...sv, id: 'sa-' + uid() }, ...s.servicosAvulsos] })),
-  updateServicoAvulso: (id, patch) => set((s) => ({ servicosAvulsos: s.servicosAvulsos.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeServicoAvulso: (id) => set((s) => ({
-    servicosAvulsos: s.servicosAvulsos.filter((x) => x.id !== id),
-    pagamentosAvulsos: s.pagamentosAvulsos.filter((p) => p.servicoAvulsoId !== id),
-  })),
-
-  // Pagamentos avulsos
-  addPagamentoAvulso: (p) => set((s) => ({ pagamentosAvulsos: [{ ...p, id: 'pa-' + uid() }, ...s.pagamentosAvulsos] })),
-  updatePagamentoAvulso: (id, patch) => set((s) => ({ pagamentosAvulsos: s.pagamentosAvulsos.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removePagamentoAvulso: (id) => set((s) => ({ pagamentosAvulsos: s.pagamentosAvulsos.filter((x) => x.id !== id) })),
-
-  // Prestadores
-  addPrestador: (p) => set((s) => ({ prestadores: [{ ...p, id: 'prs-' + uid() }, ...s.prestadores] })),
-  updatePrestador: (id, patch) => set((s) => ({ prestadores: s.prestadores.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removePrestador: (id) => set((s) => ({ prestadores: s.prestadores.filter((x) => x.id !== id) })),
-
-  // Currículos
-  addCurriculo: (c) => set((s) => ({ curriculos: [{ ...c, id: 'cv-' + uid() }, ...s.curriculos] })),
-  updateCurriculo: (id, patch) => set((s) => ({ curriculos: s.curriculos.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeCurriculo: (id) => set((s) => ({ curriculos: s.curriculos.filter((x) => x.id !== id) })),
-
-  // Concorrentes
-  addConcorrente: (c) => set((s) => ({ concorrentes: [{ ...c, id: 'pc-' + uid() }, ...s.concorrentes] })),
-  updateConcorrente: (id, patch) => set((s) => ({ concorrentes: s.concorrentes.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
-  removeConcorrente: (id) => set((s) => ({ concorrentes: s.concorrentes.filter((x) => x.id !== id) })),
-
-  updateProLabore: (patch) => set((s) => ({ proLabore: { ...s.proLabore, ...patch } })),
-
-  login: (identificador, senha) => {
+  login: async (identificador, senha) => {
     const id = identificador.trim().toLowerCase()
-    const u = get().usuarios.find(
+    const { data: users } = await supabase.from('usuarios').select('*')
+    const u = (users || []).find(
       (x) => (x.login.toLowerCase() === id || x.email.toLowerCase() === id) && x.senha === senha,
     )
     if (!u) return { ok: false, erro: 'Usuário ou senha inválidos' }
     if (u.status !== 'ativo') return { ok: false, erro: 'Usuário inativo — contate um administrador' }
-    const sessao = sessaoDoUsuario(u)
+    
+    const sessao = sessaoDoUsuario({
+      id: u.id, nome: u.nome, login: u.login, email: u.email, senha: u.senha, perfil: u.perfil, status: u.status
+    })
     set({ autenticado: true, sessao })
-    // marca último acesso
-    set((s) => ({ usuarios: s.usuarios.map((x) => (x.id === u.id ? { ...x, ultimoAcesso: new Date().toISOString() } : x)) }))
+    
+    await supabase.from('usuarios').update({ ultimo_acesso: new Date().toISOString() }).eq('id', u.id)
     try { window.localStorage.setItem(AUTH_KEY, JSON.stringify(u.login)) } catch {}
     return { ok: true }
   },
@@ -372,7 +621,7 @@ export const useStore = create<State>((set, get) => ({
   },
 
   pushToast: (t) => {
-    const id = uid()
+    const id = Math.random().toString(36).slice(2, 9)
     set((s) => ({ toasts: [...s.toasts, { ...t, id }] }))
     setTimeout(() => get().removeToast(id), 3500)
   },

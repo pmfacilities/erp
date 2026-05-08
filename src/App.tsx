@@ -21,6 +21,7 @@ import { Curriculos } from './pages/Curriculos'
 import { Concorrentes } from './pages/Concorrentes'
 import { SalaSocios } from './pages/SalaSocios'
 import { PainelSocio } from './pages/PainelSocio'
+import { InitializeStore } from './components/InitializeStore'
 
 export default function App() {
   const autenticado = useStore((s) => s.autenticado)
@@ -37,7 +38,9 @@ export default function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <InitializeStore />
+      <Routes>
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
@@ -65,5 +68,6 @@ export default function App() {
         <Route path="/configuracoes" element={<Configuracoes />} />
       </Route>
     </Routes>
+    </>
   )
 }
