@@ -1,11 +1,12 @@
-import { CheckCircle2, Info, XCircle, X } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Info, X, AlertTriangle } from 'lucide-react'
 import { useStore } from '@/store/useStore'
 import { cn } from '@/lib/utils'
 
 const icons = {
   success: <CheckCircle2 className="h-5 w-5 text-emerald-500" />,
-  error: <XCircle className="h-5 w-5 text-red-500" />,
-  info: <Info className="h-5 w-5 text-sky-500" />,
+  error: <AlertCircle className="h-5 w-5 text-red-500" />,
+  info: <Info className="h-5 w-5 text-blue-500" />,
+  warning: <AlertTriangle className="h-5 w-5 text-amber-500" />,
 }
 
 export function Toaster() {

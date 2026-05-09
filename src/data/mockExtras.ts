@@ -99,6 +99,33 @@ export interface PropostaConcorrente {
   anexo?: string
 }
 
+// ---------- Orçamentos (Comercial) ----------
+export interface OrcamentoItem {
+  id: ID
+  orcamentoId: ID
+  descricao: string
+  quantidade: number
+  valorUnitario: number
+  valorTotal: number
+}
+
+export interface Orcamento {
+  id: ID
+  numero: string
+  clienteNome: string
+  clienteContato?: string
+  clienteEmail?: string
+  clienteEndereco?: string
+  dataEmissao: string
+  vencimento?: string
+  status: 'rascunho' | 'enviado' | 'aprovado' | 'reprovado' | 'cancelado'
+  total: number
+  itens: OrcamentoItem[]
+  observacoes?: string
+  condicoesPagamento?: string
+  validadeDias: number
+}
+
 // ---------- Parâmetros do modelo Pró-Labore (da planilha) ----------
 export interface ProLaboreConfig {
   reservaDAS: number        // 0.20 (20%)

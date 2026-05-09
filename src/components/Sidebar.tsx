@@ -41,6 +41,7 @@ const sections: Section[] = [
     itens: [
       { to: '/contratos', label: 'Contratos', icon: FileText, permite: TODOS },
       { to: '/clientes', label: 'Clientes', icon: Users, permite: TODOS },
+      { to: '/orcamentos', label: 'Orçamentos', icon: Receipt, permite: TODOS },
       { to: '/servicos-avulsos', label: 'Serviços Avulsos', icon: Zap, permite: TODOS },
       { to: '/prestadores', label: 'Prestadores', icon: Briefcase, permite: TODOS },
       { to: '/concorrentes', label: 'Propostas Concorrentes', icon: Trophy, permite: TODOS },

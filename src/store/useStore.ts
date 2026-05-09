@@ -11,13 +11,13 @@ import {
 } from '@/data/mockData'
 import {
   Despesa, ServicoAvulso, PagamentoAvulso, Prestador, Curriculo,
-  PropostaConcorrente, ProLaboreConfig,
+  PropostaConcorrente, ProLaboreConfig, Orcamento, OrcamentoItem,
   despesasSeed, servicosAvulsosSeed, pagamentosAvulsosSeed, prestadoresSeed,
   curriculosSeed, concorrentesSeed, proLaboreDefault,
 } from '@/data/mockExtras'
 import { uid } from '@/lib/utils'
 
-interface Toast { id: string; titulo: string; descricao?: string; tipo: 'success' | 'error' | 'info' }
+interface Toast { id: string; titulo: string; descricao?: string; tipo: 'success' | 'error' | 'info' | 'warning' }
 
 export type PerfilSessao = 'socio_gestor' | 'socio' | 'gerente'
 
@@ -78,7 +78,9 @@ interface State {
   curriculos: Curriculo[]
   concorrentes: PropostaConcorrente[]
   proLabore: ProLaboreConfig
-
+  orcamentos: Orcamento[]
+  sidebarAberta: boolean
+  
   // Ações
   fetchData: () => Promise<void>
   seedDatabase: () => Promise<void>
@@ -154,6 +156,11 @@ interface State {
   updateConcorrente: (id: string, patch: Partial<PropostaConcorrente>) => Promise<void>
   removeConcorrente: (id: string) => Promise<void>
 
+  // orçamentos
+  addOrcamento: (o: Omit<Orcamento, 'id' | 'itens'>, itens: Omit<OrcamentoItem, 'id' | 'orcamentoId'>[]) => Promise<void>
+  updateOrcamento: (id: string, patch: Partial<Orcamento>) => Promise<void>
+  removeOrcamento: (id: string) => Promise<void>
+
   // empresa / socios
   updateEmpresa: (patch: Partial<typeof empresaInfo>) => Promise<void>
   addSocio: (s: { nome: string; telefone: string }) => Promise<void>
@@ -169,7 +176,6 @@ interface State {
   updateProLabore: (patch: Partial<ProLaboreConfig>) => Promise<void>
 
   // UI
-  sidebarAberta: boolean
   toggleSidebar: (aberto?: boolean) => void
 
   // sessão / auth
@@ -205,6 +211,7 @@ export const useStore = create<State>((set, get) => ({
   prestadores: [],
   curriculos: [],
   concorrentes: [],
+  orcamentos: [],
   proLabore: proLaboreDefault,
   sidebarAberta: false,
 
@@ -216,7 +223,8 @@ export const useStore = create<State>((set, get) => ({
         { data: oco }, { data: fin }, { data: est },
         { data: usr }, { data: cfg }, { data: srv },
         { data: dsp }, { data: esc }, { data: pag },
-        { data: pre }, { data: cur }, { data: con }
+        { data: pre }, { data: cur }, { data: con },
+        { data: orc }, { data: orit }
       ] = await Promise.all([
         supabase.from('clientes').select('*').order('criado_em', { ascending: false }),
         supabase.from('contratos').select('*, postos(*)'),
@@ -233,6 +241,8 @@ export const useStore = create<State>((set, get) => ({
         supabase.from('prestadores').select('*').order('empresa', { ascending: true }),
         supabase.from('curriculos').select('*').order('nome', { ascending: true }),
         supabase.from('concorrentes').select('*').order('empresa', { ascending: true }),
+        supabase.from('orcamentos').select('*').order('data_emissao', { ascending: false }),
+        supabase.from('orcamento_itens').select('*'),
       ])
 
       set({
@@ -430,6 +440,31 @@ export const useStore = create<State>((set, get) => ({
           escopo: c.escopo,
           vencedora: c.vencedora,
           observacao: c.observacao
+        })),
+        orcamentos: (orc || []).map(o => ({
+          id: o.id,
+          numero: o.numero,
+          clienteNome: o.cliente_nome,
+          clienteContato: o.cliente_contato,
+          clienteEmail: o.cliente_email,
+          clienteEndereco: o.cliente_endereco,
+          dataEmissao: o.data_emissao,
+          vencimento: o.vencimento,
+          status: o.status,
+          total: Number(o.total),
+          observacoes: o.observacoes,
+          condicoesPagamento: o.condicoes_pagamento,
+          validadeDias: Number(o.validade_dias),
+          itens: (orit || [])
+            .filter(i => i.orcamento_id === o.id)
+            .map(i => ({
+              id: i.id,
+              orcamentoId: i.orcamento_id,
+              descricao: i.descricao,
+              quantidade: Number(i.quantidade),
+              valorUnitario: Number(i.valor_unitario),
+              valorTotal: Number(i.valor_total)
+            }))
         }))
       })
 
@@ -1019,6 +1054,64 @@ export const useStore = create<State>((set, get) => ({
   },
   removeConcorrente: async (id) => {
     await supabase.from('concorrentes').delete().eq('id', id)
+    await get().fetchData()
+  },
+
+  // orçamentos
+  addOrcamento: async (o, itens) => {
+    const { data: newOrc, error } = await supabase.from('orcamentos').insert({
+      numero: o.numero,
+      cliente_nome: o.clienteNome,
+      cliente_contato: o.clienteContato,
+      cliente_email: o.clienteEmail,
+      cliente_endereco: o.clienteEndereco,
+      data_emissao: o.dataEmissao,
+      vencimento: o.vencimento,
+      status: o.status,
+      total: o.total,
+      observacoes: o.observacoes,
+      condicoes_pagamento: o.condicoesPagamento,
+      validade_dias: o.validadeDias
+    }).select().single()
+
+    if (error) {
+      console.error('Erro ao criar orçamento:', error)
+      get().pushToast({ titulo: 'Erro ao criar', descricao: error.message, tipo: 'error' })
+      return
+    }
+
+    if (itens.length > 0) {
+      await supabase.from('orcamento_itens').insert(itens.map(i => ({
+        orcamento_id: newOrc.id,
+        descricao: i.descricao,
+        quantidade: i.quantidade,
+        valor_unitario: i.valorUnitario,
+        valor_total: i.valorTotal
+      })))
+    }
+
+    await get().fetchData()
+  },
+  updateOrcamento: async (id, patch) => {
+    const update: any = {}
+    if (patch.numero !== undefined) update.numero = patch.numero
+    if (patch.clienteNome !== undefined) update.cliente_nome = patch.clienteNome
+    if (patch.clienteContato !== undefined) update.cliente_contato = patch.clienteContato
+    if (patch.clienteEmail !== undefined) update.cliente_email = patch.clienteEmail
+    if (patch.clienteEndereco !== undefined) update.cliente_endereco = patch.clienteEndereco
+    if (patch.dataEmissao !== undefined) update.data_emissao = patch.dataEmissao
+    if (patch.vencimento !== undefined) update.vencimento = patch.vencimento
+    if (patch.status !== undefined) update.status = patch.status
+    if (patch.total !== undefined) update.total = patch.total
+    if (patch.observacoes !== undefined) update.observacoes = patch.observacoes
+    if (patch.condicoesPagamento !== undefined) update.condicoes_pagamento = patch.condicoesPagamento
+    if (patch.validadeDias !== undefined) update.validade_dias = patch.validadeDias
+
+    await supabase.from('orcamentos').update(update).eq('id', id)
+    await get().fetchData()
+  },
+  removeOrcamento: async (id) => {
+    await supabase.from('orcamentos').delete().eq('id', id)
     await get().fetchData()
   },
 

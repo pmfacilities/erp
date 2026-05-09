@@ -22,6 +22,7 @@ import { Curriculos } from './pages/Curriculos'
 import { Concorrentes } from './pages/Concorrentes'
 import { SalaSocios } from './pages/SalaSocios'
 import { PainelSocio } from './pages/PainelSocio'
+import { Orcamentos } from './pages/Orcamentos'
 
 export default function App() {
   const autenticado = useStore((s) => s.autenticado)
@@ -74,6 +75,7 @@ export default function App() {
         {/* Rotas gerais */}
         <Route path="/contratos" element={<Contratos />} />
         <Route path="/clientes" element={<Clientes />} />
+        <Route path="/orcamentos" element={<Orcamentos />} />
         <Route path="/servicos-avulsos" element={<ServicosAvulsos />} />
         <Route path="/prestadores" element={<Prestadores />} />
         <Route path="/concorrentes" element={<Concorrentes />} />
