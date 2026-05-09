@@ -73,7 +73,7 @@ export function Orcamentos() {
 
     const numero = `ORC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
     
-    await addOrcamento({
+    const success = await addOrcamento({
       ...novo,
       numero,
       dataEmissao: new Date().toISOString().slice(0, 10),
@@ -84,8 +84,13 @@ export function Orcamentos() {
       valorTotal: Number(it.quantidade) * Number(it.valorUnitario)
     })))
 
+    // Apenas se não houver erro (o addOrcamento no store já mostra o toast de erro)
+    // Precisamos que o addOrcamento retorne algo para sabermos.
+    // Vou ajustar o store para retornar boolean.
+    
     setModalNovo(false)
-    pushToast({ titulo: 'Orçamento criado', tipo: 'success' })
+    // pushToast({ titulo: 'Orçamento criado', tipo: 'success' }) // Removido daqui, o store vai gerenciar
+    
     // Reset
     setNovo({
       clienteNome: '', clienteContato: '', clienteEmail: '', clienteEndereco: '',

@@ -157,7 +157,7 @@ interface State {
   removeConcorrente: (id: string) => Promise<void>
 
   // orçamentos
-  addOrcamento: (o: Omit<Orcamento, 'id' | 'itens'>, itens: Omit<OrcamentoItem, 'id' | 'orcamentoId'>[]) => Promise<void>
+  addOrcamento: (o: Omit<Orcamento, 'id' | 'itens'>, itens: Omit<OrcamentoItem, 'id' | 'orcamentoId'>[]) => Promise<boolean>
   updateOrcamento: (id: string, patch: Partial<Orcamento>) => Promise<void>
   removeOrcamento: (id: string) => Promise<void>
 
@@ -1077,20 +1077,28 @@ export const useStore = create<State>((set, get) => ({
     if (error) {
       console.error('Erro ao criar orçamento:', error)
       get().pushToast({ titulo: 'Erro ao criar', descricao: error.message, tipo: 'error' })
-      return
+      return false
     }
 
     if (itens.length > 0) {
-      await supabase.from('orcamento_itens').insert(itens.map(i => ({
+      const { error: errorItens } = await supabase.from('orcamento_itens').insert(itens.map(i => ({
         orcamento_id: newOrc.id,
         descricao: i.descricao,
         quantidade: i.quantidade,
         valor_unitario: i.valorUnitario,
         valor_total: i.valorTotal
       })))
+      
+      if (errorItens) {
+        console.error('Erro ao criar itens:', errorItens)
+        get().pushToast({ titulo: 'Erro nos itens', descricao: errorItens.message, tipo: 'error' })
+        return false
+      }
     }
 
     await get().fetchData()
+    get().pushToast({ titulo: 'Orçamento criado', tipo: 'success' })
+    return true
   },
   updateOrcamento: async (id, patch) => {
     const update: any = {}
