@@ -113,7 +113,7 @@ export interface Ocorrencia {
 
 export interface LancamentoFinanceiro {
   id: ID
-  tipo: 'receber' | 'pagar'
+  tipo: 'receber' | 'pagar' | 'pagamento_colaborador'
   descricao: string
   contratoId?: ID
   fornecedorCliente: string

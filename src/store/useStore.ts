@@ -109,6 +109,8 @@ interface State {
 
   // financeiro
   addLancamento: (l: Omit<LancamentoFinanceiro, 'id'>) => Promise<void>
+  updateLancamento: (id: string, patch: Partial<LancamentoFinanceiro>) => Promise<void>
+  removeLancamento: (id: string) => Promise<void>
   marcarPago: (id: string, pagamento: string) => Promise<void>
 
   // estoque
@@ -587,7 +589,7 @@ export const useStore = create<State>((set, get) => ({
   },
 
   addLancamento: async (l) => {
-    await supabase.from('financeiro').insert({
+    const { data, error } = await supabase.from('financeiro').insert({
       tipo: l.tipo,
       descricao: l.descricao,
       contrato_id: l.contratoId,
@@ -596,11 +598,35 @@ export const useStore = create<State>((set, get) => ({
       vencimento: l.vencimento,
       status: l.status,
       centro_custo: l.centroCusto
-    })
+    }).select()
+    if (error) {
+      console.error('addLancamento error:', error)
+      get().pushToast({ titulo: 'Erro ao salvar lançamento', descricao: error.message, tipo: 'error' })
+      return
+    }
+    console.log('addLancamento OK:', data)
     await get().fetchData()
   },
   marcarPago: async (id, pagamento) => {
     await supabase.from('financeiro').update({ status: 'pago', pagamento }).eq('id', id)
+    await get().fetchData()
+  },
+  updateLancamento: async (id, patch) => {
+    const update: any = {}
+    if (patch.tipo !== undefined) update.tipo = patch.tipo
+    if (patch.descricao !== undefined) update.descricao = patch.descricao
+    if (patch.fornecedorCliente !== undefined) update.fornecedor_cliente = patch.fornecedorCliente
+    if (patch.valor !== undefined) update.valor = patch.valor
+    if (patch.vencimento !== undefined) update.vencimento = patch.vencimento
+    if (patch.status !== undefined) update.status = patch.status
+    if (patch.centroCusto !== undefined) update.centro_custo = patch.centroCusto
+    if (patch.contratoId !== undefined) update.contrato_id = patch.contratoId
+    if (patch.pagamento !== undefined) update.pagamento = patch.pagamento
+    await supabase.from('financeiro').update(update).eq('id', id)
+    await get().fetchData()
+  },
+  removeLancamento: async (id) => {
+    await supabase.from('financeiro').delete().eq('id', id)
     await get().fetchData()
   },
 
