@@ -145,10 +145,19 @@ export const servicosAvulsosSeed: ServicoAvulso[] = [
 
 // ---- Pagamentos a colaboradores (serviços avulsos) ----
 export const pagamentosAvulsosSeed: PagamentoAvulso[] = [
-  { id: 'pa-001', diaTrabalhado: '2026-04-23', colaborador: 'Natasha Neto de Souza', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
-  { id: 'pa-002', diaTrabalhado: '2026-04-23', colaborador: 'Gerson Net', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
-  { id: 'pa-003', diaTrabalhado: '2026-04-23', colaborador: 'Lucas', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
-  { id: 'pa-004', diaTrabalhado: '2026-04-23', colaborador: 'Alessandra', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
+  { id: 'pa-ale-01', diaTrabalhado: '2026-04-20', colaborador: 'Alessandra Scheles Lima', valor: 120, quemPagou: 'Rateado 4 sócios', status: 'pago' },
+  { id: 'pa-ale-02', diaTrabalhado: '2026-04-21', colaborador: 'Alessandra Scheles Lima', valor: 170, quemPagou: 'Rateado 4 sócios', status: 'pago' },
+  { id: 'pa-ale-03', diaTrabalhado: '2026-04-22', colaborador: 'Alessandra Scheles Lima', valor: 120, quemPagou: 'Rateado 4 sócios', status: 'pago' },
+  { id: 'pa-ale-04', diaTrabalhado: '2026-04-23', colaborador: 'Alessandra Scheles Lima', valor: 90, quemPagou: 'Jonathan', status: 'pago' },
+  
+  { id: 'pa-luc-01', diaTrabalhado: '2026-04-16', colaborador: 'Lucas Costa do Nascimento', valor: 100, quemPagou: 'Rateado 4 sócios', status: 'pago' },
+  { id: 'pa-luc-02', diaTrabalhado: '2026-04-20', colaborador: 'Lucas Costa do Nascimento', valor: 120, quemPagou: 'Rateado 4 sócios', status: 'pago' },
+  { id: 'pa-luc-03', diaTrabalhado: '2026-04-21', colaborador: 'Lucas Costa do Nascimento', valor: 170, quemPagou: 'Rateado 4 sócios', status: 'pago' },
+  { id: 'pa-luc-04', diaTrabalhado: '2026-04-22', colaborador: 'Lucas Costa do Nascimento', valor: 120, quemPagou: 'Rateado 4 sócios', status: 'pago' },
+  { id: 'pa-luc-05', diaTrabalhado: '2026-04-23', colaborador: 'Lucas Costa do Nascimento', valor: 90, quemPagou: 'Jonathan', status: 'pago' },
+  
+  { id: 'pa-nat-01', diaTrabalhado: '2026-04-23', colaborador: 'Natasha Neto de Souza', valor: 90, quemPagou: 'Jonathan', status: 'pago' },
+  { id: 'pa-ger-01', diaTrabalhado: '2026-04-23', colaborador: 'Gerson Neto de Souza', valor: 90, quemPagou: 'Jonathan', status: 'pago' },
 ]
 
 // ---- Prestadores de serviço (parcerias potenciais) ----

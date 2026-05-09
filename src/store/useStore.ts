@@ -520,6 +520,19 @@ export const useStore = create<State>((set, get) => ({
       })))
     }
 
+    // Pagamentos Avulsos
+    if (pagamentosAvulsosSeed.length > 0) {
+      await supabase.from('pagamentos_avulsos').insert(pagamentosAvulsosSeed.map(p => ({
+        dia_trabalhado: p.diaTrabalhado,
+        colaborador: p.colaborador,
+        servico_avulso_id: p.servicoAvulsoId,
+        descricao: p.descricao,
+        valor: p.valor,
+        quem_pagou: p.quemPagou,
+        status: p.status
+      })))
+    }
+
     // Financeiro
     if (financeiroMock.length > 0) {
       await supabase.from('financeiro').insert(financeiroMock.map(f => ({
@@ -843,20 +856,32 @@ export const useStore = create<State>((set, get) => ({
 
   // Pagamentos avulsos (in-memory, persisted via Supabase pagamentos_avulsos table if available)
   addPagamentoAvulso: async (p) => {
-    const id = uid()
-    set((s) => ({ pagamentosAvulsos: [...s.pagamentosAvulsos, { ...p, id } as PagamentoAvulso] }))
+    await supabase.from('pagamentos_avulsos').insert({
+      dia_trabalhado: p.diaTrabalhado,
+      colaborador: p.colaborador,
+      servico_avulso_id: p.servicoAvulsoId,
+      descricao: p.descricao,
+      valor: p.valor,
+      quem_pagou: p.quemPagou,
+      status: p.status
+    })
+    await get().fetchData()
   },
   updatePagamentoAvulso: async (id, patch) => {
-    set((s) => ({
-      pagamentosAvulsos: s.pagamentosAvulsos.map((p) =>
-        p.id === id ? { ...p, ...patch } : p
-      ),
-    }))
+    const update: any = {}
+    if (patch.diaTrabalhado !== undefined) update.dia_trabalhado = patch.diaTrabalhado
+    if (patch.colaborador !== undefined) update.colaborador = patch.colaborador
+    if (patch.servicoAvulsoId !== undefined) update.servico_avulso_id = patch.servicoAvulsoId
+    if (patch.descricao !== undefined) update.descricao = patch.descricao
+    if (patch.valor !== undefined) update.valor = patch.valor
+    if (patch.quemPagou !== undefined) update.quem_pagou = patch.quemPagou
+    if (patch.status !== undefined) update.status = patch.status
+    await supabase.from('pagamentos_avulsos').update(update).eq('id', id)
+    await get().fetchData()
   },
   removePagamentoAvulso: async (id) => {
-    set((s) => ({
-      pagamentosAvulsos: s.pagamentosAvulsos.filter((p) => p.id !== id),
-    }))
+    await supabase.from('pagamentos_avulsos').delete().eq('id', id)
+    await get().fetchData()
   },
 
   addDespesa: async (d) => {
