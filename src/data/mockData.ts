@@ -71,6 +71,7 @@ export interface Funcionario {
   status: StatusFuncionario
   telefone: string
   asoValidade: string
+  pix?: string
 }
 
 export interface EscalaTurno {
@@ -78,7 +79,8 @@ export interface EscalaTurno {
   data: string // YYYY-MM-DD
   funcionarioId: ID
   postoNome: string
-  contratoId: ID
+  contratoId?: ID
+  servicoAvulsoId?: ID
   inicio: string // HH:mm
   fim: string // HH:mm
   status: 'agendado' | 'presente' | 'falta' | 'coberto'
@@ -156,7 +158,7 @@ export interface Usuario {
   senha: string
   perfil: 'Administrador' | 'Financeiro' | 'Operacional' | 'RH' | 'Cliente'
   status: 'ativo' | 'inativo'
-  ultimoAcesso: string
+  ultimoAcesso?: string
   avatarIniciais?: string
 }
 
@@ -166,8 +168,12 @@ export const empresaInfo = {
   nomeFantasia: 'PS Facilities',
   cnpj: '42.118.903/0001-55',
   inscricaoEstadual: 'Isento',
-  endereco: 'Av. Alberto Braune, 1423 — Centro, Nova Friburgo/RJ',
+  endereco: 'Av. Alberto Braune, 1423 — Centro',
+  cidade: 'Nova Friburgo',
+  uf: 'RJ',
   email: 'contato@psfacilities.com.br',
+  emailComercial: 'comercial@psfacilities.com.br',
+  site: 'www.psfacilities.com.br',
   telefone: '+55 22 98813-5768',
   socios: [
     { nome: 'Jonathan da Silva', telefone: '+55 22 98813-5768' },

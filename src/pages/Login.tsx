@@ -17,7 +17,7 @@ export function Login() {
     setErro(null)
     setLoading(true)
     await new Promise((r) => setTimeout(r, 500))
-    const r = login(identificador, senha)
+    const r = await login(identificador, senha)
     setLoading(false)
     if (!r.ok) setErro(r.erro || 'Erro ao entrar')
   }

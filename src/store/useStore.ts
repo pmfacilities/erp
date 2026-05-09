@@ -107,6 +107,13 @@ interface State {
   addOcorrencia: (o: Omit<Ocorrencia, 'id' | 'criadaEm'>) => Promise<void>
   updateOcorrencia: (id: string, patch: Partial<Ocorrencia>) => Promise<void>
 
+  // operacional / ordens de serviço
+  atualizarStatusOrdem: (id: string, status: OrdemServico['status']) => Promise<void>
+  toggleChecklistItem: (ordemId: string, index: number) => Promise<void>
+  addChecklistItem: (ordemId: string, item: string) => Promise<void>
+  updateChecklistItem: (ordemId: string, index: number, patch: Partial<{ item: string; feito: boolean }>) => Promise<void>
+  removeChecklistItem: (ordemId: string, index: number) => Promise<void>
+
   // financeiro
   addLancamento: (l: Omit<LancamentoFinanceiro, 'id'>) => Promise<void>
   updateLancamento: (id: string, patch: Partial<LancamentoFinanceiro>) => Promise<void>
@@ -131,6 +138,35 @@ interface State {
   addDespesa: (d: Omit<Despesa, 'id'>) => Promise<void>
   updateDespesa: (id: string, patch: Partial<Despesa>) => Promise<void>
   removeDespesa: (id: string) => Promise<void>
+
+  // currículos
+  addCurriculo: (c: Omit<Curriculo, 'id' | 'dataEnvio'>) => Promise<void>
+  updateCurriculo: (id: string, patch: Partial<Curriculo>) => Promise<void>
+  removeCurriculo: (id: string) => Promise<void>
+
+  // prestadores
+  addPrestador: (p: Omit<Prestador, 'id'>) => Promise<void>
+  updatePrestador: (id: string, patch: Partial<Prestador>) => Promise<void>
+  removePrestador: (id: string) => Promise<void>
+
+  // concorrentes
+  addConcorrente: (c: Omit<PropostaConcorrente, 'id'>) => Promise<void>
+  updateConcorrente: (id: string, patch: Partial<PropostaConcorrente>) => Promise<void>
+  removeConcorrente: (id: string) => Promise<void>
+
+  // empresa / socios
+  updateEmpresa: (patch: Partial<typeof empresaInfo>) => Promise<void>
+  addSocio: (s: { nome: string; telefone: string }) => Promise<void>
+  updateSocio: (index: number, patch: Partial<{ nome: string; telefone: string }>) => Promise<void>
+  removeSocio: (index: number) => Promise<void>
+
+  // usuários
+  addUsuario: (u: Omit<Usuario, 'id'>) => Promise<void>
+  updateUsuario: (id: string, patch: Partial<Usuario>) => Promise<void>
+  removeUsuario: (id: string) => Promise<void>
+
+  // pro-labore
+  updateProLabore: (patch: Partial<ProLaboreConfig>) => Promise<void>
 
   // UI
   sidebarAberta: boolean
@@ -305,6 +341,8 @@ export const useStore = create<State>((set, get) => ({
           endereco: cfg.endereco,
           cidade: cfg.cidade,
           uf: cfg.uf,
+          inscricaoEstadual: cfg.inscricao_estadual || 'Isento',
+          email: cfg.email || '',
           telefone: cfg.telefone,
           emailComercial: cfg.email_comercial,
           site: cfg.site,
@@ -588,6 +626,46 @@ export const useStore = create<State>((set, get) => ({
     await get().fetchData()
   },
 
+  // operacional / ordens de serviço
+  atualizarStatusOrdem: async (id, status) => {
+    await supabase.from('ordens_servico').update({ status }).eq('id', id)
+    await get().fetchData()
+  },
+  toggleChecklistItem: async (ordemId, index) => {
+    const ordem = get().ordens.find(o => o.id === ordemId)
+    if (!ordem) return
+    const newChecklist = [...ordem.checklist]
+    newChecklist[index].feito = !newChecklist[index].feito
+    const progresso = Math.round((newChecklist.filter(i => i.feito).length / newChecklist.length) * 100)
+    await supabase.from('ordens_servico').update({ checklist: newChecklist, progresso }).eq('id', ordemId)
+    await get().fetchData()
+  },
+  addChecklistItem: async (ordemId, item) => {
+    const ordem = get().ordens.find(o => o.id === ordemId)
+    if (!ordem) return
+    const newChecklist = [...ordem.checklist, { item, feito: false }]
+    const progresso = Math.round((newChecklist.filter(i => i.feito).length / newChecklist.length) * 100)
+    await supabase.from('ordens_servico').update({ checklist: newChecklist, progresso }).eq('id', ordemId)
+    await get().fetchData()
+  },
+  updateChecklistItem: async (ordemId, index, patch) => {
+    const ordem = get().ordens.find(o => o.id === ordemId)
+    if (!ordem) return
+    const newChecklist = [...ordem.checklist]
+    newChecklist[index] = { ...newChecklist[index], ...patch }
+    const progresso = Math.round((newChecklist.filter(i => i.feito).length / newChecklist.length) * 100)
+    await supabase.from('ordens_servico').update({ checklist: newChecklist, progresso }).eq('id', ordemId)
+    await get().fetchData()
+  },
+  removeChecklistItem: async (ordemId, index) => {
+    const ordem = get().ordens.find(o => o.id === ordemId)
+    if (!ordem) return
+    const newChecklist = ordem.checklist.filter((_, i) => i !== index)
+    const progresso = newChecklist.length > 0 ? Math.round((newChecklist.filter(i => i.feito).length / newChecklist.length) * 100) : 0
+    await supabase.from('ordens_servico').update({ checklist: newChecklist, progresso }).eq('id', ordemId)
+    await get().fetchData()
+  },
+
   addLancamento: async (l) => {
     const { data, error } = await supabase.from('financeiro').insert({
       tipo: l.tipo,
@@ -747,6 +825,183 @@ export const useStore = create<State>((set, get) => ({
   },
   removeDespesa: async (id) => {
     await supabase.from('despesas').delete().eq('id', id)
+    await get().fetchData()
+  },
+
+  // prestadores
+  addPrestador: async (p) => {
+    await supabase.from('prestadores').insert({
+      razao_social: p.razaoSocial,
+      nome_fantasia: p.nomeFantasia,
+      cnpj: p.cnpj,
+      segmentos: p.segmentos,
+      cidade: p.cidade,
+      uf: p.uf,
+      contato_nome: p.contatoNome,
+      telefone: p.telefone,
+      email: p.email,
+      relacionamento: p.relacionamento,
+      observacao: p.observacao
+    })
+    await get().fetchData()
+  },
+  updatePrestador: async (id, patch) => {
+    const update: any = {}
+    if (patch.razaoSocial !== undefined) update.razao_social = patch.razaoSocial
+    if (patch.nomeFantasia !== undefined) update.nome_fantasia = patch.nomeFantasia
+    if (patch.cnpj !== undefined) update.cnpj = patch.cnpj
+    if (patch.segmentos !== undefined) update.segmentos = patch.segmentos
+    if (patch.cidade !== undefined) update.cidade = patch.cidade
+    if (patch.uf !== undefined) update.uf = patch.uf
+    if (patch.contatoNome !== undefined) update.contato_nome = patch.contatoNome
+    if (patch.telefone !== undefined) update.telefone = patch.telefone
+    if (patch.email !== undefined) update.email = patch.email
+    if (patch.relacionamento !== undefined) update.relacionamento = patch.relacionamento
+    if (patch.observacao !== undefined) update.observacao = patch.observacao
+    await supabase.from('prestadores').update(update).eq('id', id)
+    await get().fetchData()
+  },
+  removePrestador: async (id) => {
+    await supabase.from('prestadores').delete().eq('id', id)
+    await get().fetchData()
+  },
+
+  // currículos
+  addCurriculo: async (c) => {
+    await supabase.from('curriculos').insert({
+      nome: c.nome,
+      telefone: c.telefone,
+      email: c.email,
+      cargo_interesse: c.cargoInteresse,
+      cidade: c.cidade,
+      uf: c.uf,
+      escolaridade: c.escolaridade,
+      experiencia_anos: c.experienciaAnos,
+      origem: c.origem,
+      status: c.status,
+      tem_carteira: c.temCarteira,
+      observacao: c.observacao
+    })
+    await get().fetchData()
+  },
+  updateCurriculo: async (id, patch) => {
+    const update: any = {}
+    if (patch.status !== undefined) update.status = patch.status
+    if (patch.observacao !== undefined) update.observacao = patch.observacao
+    await supabase.from('curriculos').update(update).eq('id', id)
+    await get().fetchData()
+  },
+  removeCurriculo: async (id) => {
+    await supabase.from('curriculos').delete().eq('id', id)
+    await get().fetchData()
+  },
+
+  // pro-labore
+  updateProLabore: async (patch) => {
+    const { data: config } = await supabase.from('configuracoes').select('*').single()
+    if (config) {
+      const update: any = { pro_labore: { ...(config.pro_labore || {}), ...patch } }
+      await supabase.from('configuracoes').update(update).eq('id', config.id)
+      await get().fetchData()
+    }
+  },
+
+  // concorrentes
+  addConcorrente: async (c) => {
+    await supabase.from('concorrentes').insert({
+      empresa: c.empresa,
+      cnpj: c.cnpj,
+      contrato_disputado: c.contratoDisputado,
+      cliente: c.cliente,
+      data_proposta: c.dataProposta,
+      valor_mensal: c.valorMensal,
+      escopo: c.escopo,
+      vencedora: c.vencedora,
+      observacao: c.observacao
+    })
+    await get().fetchData()
+  },
+  updateConcorrente: async (id, patch) => {
+    const update: any = {}
+    if (patch.vencedora !== undefined) update.vencedora = patch.vencedora
+    if (patch.observacao !== undefined) update.observacao = patch.observacao
+    await supabase.from('concorrentes').update(update).eq('id', id)
+    await get().fetchData()
+  },
+  removeConcorrente: async (id) => {
+    await supabase.from('concorrentes').delete().eq('id', id)
+    await get().fetchData()
+  },
+
+  // empresa / socios
+  updateEmpresa: async (patch) => {
+    const { data: config } = await supabase.from('configuracoes').select('*').single()
+    if (config) {
+      const update: any = {}
+      if (patch.razaoSocial !== undefined) update.razao_social = patch.razaoSocial
+      if (patch.nomeFantasia !== undefined) update.nome_fantasia = patch.nomeFantasia
+      if (patch.cnpj !== undefined) update.cnpj = patch.cnpj
+      if (patch.endereco !== undefined) update.endereco = patch.endereco
+      if (patch.cidade !== undefined) update.cidade = patch.cidade
+      if (patch.uf !== undefined) update.uf = patch.uf
+      if (patch.email !== undefined) update.email = patch.email
+      if (patch.emailComercial !== undefined) update.email_comercial = patch.emailComercial
+      if (patch.site !== undefined) update.site = patch.site
+      if (patch.telefone !== undefined) update.telefone = patch.telefone
+      await supabase.from('configuracoes').update(update).eq('id', config.id)
+      await get().fetchData()
+    }
+  },
+  addSocio: async (s) => {
+    const { data: config } = await supabase.from('configuracoes').select('*').single()
+    if (config) {
+      const newSocios = [...(config.socios || []), s]
+      await supabase.from('configuracoes').update({ socios: newSocios }).eq('id', config.id)
+      await get().fetchData()
+    }
+  },
+  updateSocio: async (index, patch) => {
+    const { data: config } = await supabase.from('configuracoes').select('*').single()
+    if (config) {
+      const newSocios = [...(config.socios || [])]
+      newSocios[index] = { ...newSocios[index], ...patch }
+      await supabase.from('configuracoes').update({ socios: newSocios }).eq('id', config.id)
+      await get().fetchData()
+    }
+  },
+  removeSocio: async (index) => {
+    const { data: config } = await supabase.from('configuracoes').select('*').single()
+    if (config) {
+      const newSocios = config.socios.filter((_: any, i: number) => i !== index)
+      await supabase.from('configuracoes').update({ socios: newSocios }).eq('id', config.id)
+      await get().fetchData()
+    }
+  },
+
+  // usuários
+  addUsuario: async (u) => {
+    await supabase.from('usuarios').insert({
+      nome: u.nome,
+      email: u.email,
+      login: u.login,
+      senha: u.senha,
+      perfil: u.perfil,
+      status: u.status
+    })
+    await get().fetchData()
+  },
+  updateUsuario: async (id, patch) => {
+    const update: any = {}
+    if (patch.nome !== undefined) update.nome = patch.nome
+    if (patch.email !== undefined) update.email = patch.email
+    if (patch.perfil !== undefined) update.perfil = patch.perfil
+    if (patch.status !== undefined) update.status = patch.status
+    if (patch.senha !== undefined) update.senha = patch.senha
+    await supabase.from('usuarios').update(update).eq('id', id)
+    await get().fetchData()
+  },
+  removeUsuario: async (id) => {
+    await supabase.from('usuarios').delete().eq('id', id)
     await get().fetchData()
   },
 

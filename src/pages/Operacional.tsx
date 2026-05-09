@@ -203,7 +203,7 @@ function OrdemDialog({ ordem, onClose }: { ordem: OrdemServico | null; onClose: 
                 {editIdx === i ? (
                   <>
                     <Input value={editTexto} onChange={(e) => setEditTexto(e.target.value)} className="flex-1 h-8" autoFocus />
-                    <Button size="sm" onClick={() => { updateChecklistItem(ordem.id, i, editTexto); setEditIdx(null); pushToast({ titulo: 'Item atualizado', tipo: 'success' }) }}>
+                    <Button size="sm" onClick={() => { updateChecklistItem(ordem.id, i, { item: editTexto }); setEditIdx(null); pushToast({ titulo: 'Item atualizado', tipo: 'success' }) }}>
                       Salvar
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setEditIdx(null)}>Cancelar</Button>
