@@ -856,7 +856,7 @@ export const useStore = create<State>((set, get) => ({
 
   // Pagamentos avulsos (in-memory, persisted via Supabase pagamentos_avulsos table if available)
   addPagamentoAvulso: async (p) => {
-    await supabase.from('pagamentos_avulsos').insert({
+    const { error } = await supabase.from('pagamentos_avulsos').insert({
       dia_trabalhado: p.diaTrabalhado,
       colaborador: p.colaborador,
       servico_avulso_id: p.servicoAvulsoId,
@@ -865,6 +865,10 @@ export const useStore = create<State>((set, get) => ({
       quem_pagou: p.quemPagou,
       status: p.status
     })
+    if (error) {
+      console.error('Erro ao adicionar pagamento:', error)
+      get().pushToast({ titulo: 'Erro ao salvar', descricao: error.message, tipo: 'error' })
+    }
     await get().fetchData()
   },
   updatePagamentoAvulso: async (id, patch) => {
@@ -876,11 +880,13 @@ export const useStore = create<State>((set, get) => ({
     if (patch.valor !== undefined) update.valor = patch.valor
     if (patch.quemPagou !== undefined) update.quem_pagou = patch.quemPagou
     if (patch.status !== undefined) update.status = patch.status
-    await supabase.from('pagamentos_avulsos').update(update).eq('id', id)
+    const { error } = await supabase.from('pagamentos_avulsos').update(update).eq('id', id)
+    if (error) console.error('Erro ao atualizar pagamento:', error)
     await get().fetchData()
   },
   removePagamentoAvulso: async (id) => {
-    await supabase.from('pagamentos_avulsos').delete().eq('id', id)
+    const { error } = await supabase.from('pagamentos_avulsos').delete().eq('id', id)
+    if (error) console.error('Erro ao remover pagamento:', error)
     await get().fetchData()
   },
 
