@@ -31,13 +31,17 @@ export function ServicosAvulsos() {
   const [editPagamento, setEditPagamento] = useState<PagamentoAvulso | null>(null)
 
   const totais = useMemo(() => {
-    const receita = servicosAvulsos.reduce((a, s) => a + s.valorBruto, 0)
-    const custoMao = servicosAvulsos.reduce((a, s) => a + s.custoMaoDeObra, 0)
-    const custoMat = servicosAvulsos.reduce((a, s) => a + s.custoMaterial, 0)
-    const margem = receita - custoMao - custoMat
-    const margemPct = receita > 0 ? (margem / receita) * 100 : 0
+    // Apenas serviços não cancelados entram na conta
+    const ativos = servicosAvulsos.filter(s => s.status !== 'cancelado')
+    const receita = ativos.reduce((a, s) => a + s.valorBruto, 0)
+    const custoMat = ativos.reduce((a, s) => a + s.custoMaterial, 0)
+    
+    // O pagamento real vem da tabela de pagamentos avulsos
     const totalPagamentos = pagamentosAvulsos.reduce((a, p) => a + p.valor, 0)
-    return { receita, custoMao, custoMat, margem, margemPct, totalPagamentos }
+    
+    const margem = receita - totalPagamentos - custoMat
+    const margemPct = receita > 0 ? (margem / receita) * 100 : 0
+    return { receita, custoMat, margem, margemPct, totalPagamentos }
   }, [servicosAvulsos, pagamentosAvulsos])
 
   return (
@@ -46,8 +50,8 @@ export function ServicosAvulsos() {
       <div className="p-6 space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card><CardContent className="flex items-start justify-between"><div><div className="text-xs text-slate-500">Receita total</div><div className="text-2xl font-bold text-slate-900">{formatBRL(totais.receita)}</div></div><DollarSign className="h-5 w-5 text-brand-500" /></CardContent></Card>
-          <Card><CardContent className="flex items-start justify-between"><div><div className="text-xs text-slate-500">Pagto colaboradores</div><div className="text-2xl font-bold text-red-600">{formatBRL(totais.custoMao)}</div></div><Users className="h-5 w-5 text-red-500" /></CardContent></Card>
-          <Card><CardContent className="flex items-start justify-between"><div><div className="text-xs text-slate-500">Margem</div><div className="text-2xl font-bold text-emerald-600">{formatBRL(totais.margem)}</div><div className="text-xs text-slate-500">{totais.margemPct.toFixed(1)}%</div></div><TrendingUp className="h-5 w-5 text-emerald-500" /></CardContent></Card>
+          <Card><CardContent className="flex items-start justify-between"><div><div className="text-xs text-slate-500">Pagto colaboradores</div><div className="text-2xl font-bold text-red-600">{formatBRL(totais.totalPagamentos)}</div></div><Users className="h-5 w-5 text-red-500" /></CardContent></Card>
+          <Card><CardContent className="flex items-start justify-between"><div><div className="text-xs text-slate-500">Margem real</div><div className="text-2xl font-bold text-emerald-600">{formatBRL(totais.margem)}</div><div className="text-xs text-slate-500">{totais.margemPct.toFixed(1)}%</div></div><TrendingUp className="h-5 w-5 text-emerald-500" /></CardContent></Card>
           <Card><CardContent className="flex items-start justify-between"><div><div className="text-xs text-slate-500">Jobs abertos</div><div className="text-2xl font-bold text-slate-900">{servicosAvulsos.filter((s) => !['concluido', 'faturado', 'cancelado'].includes(s.status)).length}</div></div><Calendar className="h-5 w-5 text-slate-400" /></CardContent></Card>
         </div>
 

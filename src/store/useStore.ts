@@ -215,7 +215,8 @@ export const useStore = create<State>((set, get) => ({
         { data: cli }, { data: ctr }, { data: fun }, 
         { data: oco }, { data: fin }, { data: est },
         { data: usr }, { data: cfg }, { data: srv },
-        { data: dsp }, { data: esc }
+        { data: dsp }, { data: esc }, { data: pag },
+        { data: pre }, { data: cur }, { data: con }
       ] = await Promise.all([
         supabase.from('clientes').select('*').order('criado_em', { ascending: false }),
         supabase.from('contratos').select('*, postos(*)'),
@@ -228,6 +229,10 @@ export const useStore = create<State>((set, get) => ({
         supabase.from('servicos_avulsos').select('*').order('data', { ascending: false }),
         supabase.from('despesas').select('*').order('data', { ascending: false }),
         supabase.from('escalas').select('*').order('data', { ascending: false }),
+        supabase.from('pagamentos_avulsos').select('*').order('dia_trabalhado', { ascending: false }),
+        supabase.from('prestadores').select('*').order('empresa', { ascending: true }),
+        supabase.from('curriculos').select('*').order('nome', { ascending: true }),
+        supabase.from('concorrentes').select('*').order('empresa', { ascending: true }),
       ])
 
       set({
@@ -372,6 +377,59 @@ export const useStore = create<State>((set, get) => ({
           valor: Number(d.valor),
           quemComprou: d.quem_comprou,
           reembolsado: d.reembolsado,
+          servicoAvulsoId: d.servico_avulso_id
+        })),
+        pagamentosAvulsos: (pag || []).map(p => ({
+          id: p.id,
+          diaTrabalhado: p.dia_trabalhado,
+          colaborador: p.colaborador,
+          servicoAvulsoId: p.servico_avulso_id,
+          descricao: p.descricao,
+          valor: Number(p.valor),
+          quemPagou: p.quem_pagou,
+          status: p.status
+        })),
+        prestadores: (pre || []).map(p => ({
+          id: p.id,
+          razaoSocial: p.razao_social || p.empresa,
+          nomeFantasia: p.nome_fantasia || p.empresa,
+          cnpj: p.cnpj,
+          segmentos: p.segmentos || [],
+          cidade: p.cidade || '',
+          uf: p.uf || '',
+          contatoNome: p.responsavel || p.contato_nome,
+          telefone: p.telefone,
+          email: p.email || '',
+          relacionamento: p.status || p.relacionamento || 'em_contato',
+          observacao: p.observacao,
+        })),
+        curriculos: (cur || []).map(c => ({
+          id: c.id,
+          nome: c.nome,
+          telefone: c.telefone,
+          email: c.email || '',
+          cargoInteresse: c.cargo_pretendido || c.cargo_interesse,
+          cidade: c.cidade || '',
+          uf: c.uf || '',
+          escolaridade: c.escolaridade || '',
+          experienciaAnos: Number(c.experiencia_anos || 0),
+          dataEnvio: c.data_recebimento || c.data_envio,
+          origem: c.origem || 'Indicação',
+          status: c.status || 'novo',
+          observacao: c.observacao,
+          temCarteira: Boolean(c.tem_carteira),
+        })),
+        concorrentes: (con || []).map(c => ({
+          id: c.id,
+          empresa: c.empresa,
+          cnpj: c.cnpj,
+          contratoDisputado: c.contrato_disputado,
+          cliente: c.cliente,
+          dataProposta: c.data_proposta,
+          valorMensal: Number(c.valor_mensal),
+          escopo: c.escopo,
+          vencedora: c.vencedora,
+          observacao: c.observacao
         }))
       })
 
