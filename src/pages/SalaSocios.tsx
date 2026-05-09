@@ -70,8 +70,8 @@ export function SalaSocios() {
   const caixaReal = useCaixaConsolidado()
   const [caixaBruto, setCaixaBruto] = useState(17143)
 
-  const aplicacao = useMemo(() => aplicarRegra(caixaBruto, proLabore), [caixaBruto, proLabore])
-  const aplicacaoReal = useMemo(() => aplicarRegra(caixaReal.caixaBrutoAcumulado, proLabore), [caixaReal, proLabore])
+  const aplicacao = useMemo(() => aplicarRegra(caixaBruto || 0, proLabore || { reservaDAS: 0.2, reservaOperacional: 0.1, gatilhoMinimo: 12000, pctCapitalizacao: 0.4, pctDistribuicao: 0.6, numSocios: 4 }), [caixaBruto, proLabore])
+  const aplicacaoReal = useMemo(() => aplicarRegra(caixaReal?.caixaBrutoAcumulado || 0, proLabore || { reservaDAS: 0.2, reservaOperacional: 0.1, gatilhoMinimo: 12000, pctCapitalizacao: 0.4, pctDistribuicao: 0.6, numSocios: 4 }), [caixaReal, proLabore])
 
   return (
     <>

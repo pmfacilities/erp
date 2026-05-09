@@ -1,6 +1,8 @@
+import React from 'react'
 import { Header } from '@/components/Header'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import { useStore } from '@/store/useStore'
 import { formatBRL } from '@/lib/utils'
 import {
@@ -17,37 +19,60 @@ import { Link } from 'react-router-dom'
 const chartColors = ['#1e4ef5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
 export function Dashboard() {
-  const { contratos, funcionarios, financeiro, ocorrencias, estoque } = useStore()
+  const { contratos, funcionarios, financeiro, ocorrencias, estoque, servicosAvulsos, despesas, pagamentosAvulsos, addServicoAvulso, addLancamento } = useStore()
 
-  const contratosAtivos = contratos.filter((c) => c.status === 'ativo')
-  const receitaMensal = contratosAtivos.reduce((a, c) => a + c.valorMensal, 0)
-  const custoMensal = contratosAtivos.reduce((a, c) => a + c.custoMensal, 0)
-  const margem = receitaMensal - custoMensal
-  const margemPct = (margem / receitaMensal) * 100
-  const funcAtivos = funcionarios.filter((f) => f.status === 'ativo').length
-  const aReceberAberto = financeiro.filter((f) => f.tipo === 'receber' && f.status !== 'pago').reduce((a, f) => a + f.valor, 0)
-  const aPagarAberto = financeiro.filter((f) => f.tipo === 'pagar' && f.status !== 'pago').reduce((a, f) => a + f.valor, 0)
-  const ocoAbertas = ocorrencias.filter((o) => o.status !== 'resolvida')
-  const estoqueBaixo = estoque.filter((e) => e.quantidade < e.estoqueMinimo)
+  // KPIs Reais
+  const contratosAtivos = (contratos || []).filter((c) => c.status === 'ativo')
+  const servicosMes = (servicosAvulsos || []).filter((s) => ['concluido', 'faturado'].includes(s.status))
+  
+  const receitaContratos = contratosAtivos.reduce((a, c) => a + c.valorMensal, 0)
+  const receitaAvulsos = servicosMes.reduce((a, s) => a + s.valorBruto, 0)
+  const receitaTotal = receitaContratos + receitaAvulsos
+
+  const custoFixos = contratosAtivos.reduce((a, c) => a + c.custoMensal, 0)
+  const custoMaoAvulso = servicosMes.reduce((a, s) => a + s.custoMaoDeObra, 0)
+  const custoMatAvulso = servicosMes.reduce((a, s) => a + s.custoMaterial, 0)
+  const totalDespesas = (despesas || []).reduce((a, d) => a + d.valor, 0)
+  
+  const margem = receitaTotal - custoFixos - custoMaoAvulso - custoMatAvulso - totalDespesas
+  const margemPct = receitaTotal > 0 ? (margem / receitaTotal) * 100 : 0
+  
+  const funcAtivos = (funcionarios || []).filter((f) => f.status === 'ativo' || f.status === 'avulso').length
+  const ocoAbertas = (ocorrencias || []).filter((o) => o.status !== 'resolvida')
+  
+  const aReceberAberto = (financeiro || []).filter((f) => f.tipo === 'receber' && f.status !== 'pago').reduce((a, f) => a + f.valor, 0)
+  const aPagarAberto = (financeiro || []).filter((f) => f.tipo === 'pagar' && f.status !== 'pago').reduce((a, f) => a + f.valor, 0)
+  const estoqueBaixo = (estoque || []).filter((e) => e.quantidade < e.estoqueMinimo)
+
+  // Gráfico de faturamento real (simulado com base nos dados atuais como 'ponto de agora')
+  const chartData = [
+    { mes: 'Meta', receita: 30000, custo: 22000 },
+    { mes: 'Real (Atual)', receita: receitaTotal, custo: receitaTotal - margem },
+  ]
+
+  const mixServicos = [
+    { servico: 'Contratos Fixos', valor: receitaContratos },
+    { servico: 'Serviços Avulsos', valor: receitaAvulsos },
+  ]
 
   return (
     <>
-      <Header title="Dashboard" subtitle="Visão geral da operação · Abril 2026" />
+      <Header title="Dashboard" subtitle="Visão geral da operação · Real-time" />
       <div className="p-6 space-y-6">
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPI
             icon={<DollarSign className="h-5 w-5" />}
-            label="Receita contratada"
-            value={formatBRL(receitaMensal)}
-            delta="+2,0%"
+            label="Receita total"
+            value={formatBRL(receitaTotal)}
+            delta={formatBRL(receitaAvulsos)}
             deltaUp
-            sub="vs. mês anterior"
+            sub="incl. avulsos"
             color="bg-brand-50 text-brand-700"
           />
           <KPI
             icon={<TrendingUp className="h-5 w-5" />}
-            label="Margem bruta"
+            label="Margem estimada"
             value={formatBRL(margem)}
             delta={`${margemPct.toFixed(1)}%`}
             deltaUp={margemPct > 15}
@@ -56,9 +81,9 @@ export function Dashboard() {
           />
           <KPI
             icon={<Users className="h-5 w-5" />}
-            label="Funcionários ativos"
+            label="Equipe ativa"
             value={String(funcAtivos)}
-            delta="+3"
+            delta={String(funcionarios.filter(f => f.status === 'avulso').length) + ' avulsos'}
             deltaUp
             sub={`${funcionarios.length} no total`}
             color="bg-sky-50 text-sky-700"
@@ -78,12 +103,12 @@ export function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Faturamento × Custo (6 meses)</CardTitle>
-              <CardDescription>Evolução da receita contratada e custo operacional</CardDescription>
+              <CardTitle>Desempenho Financeiro Real</CardTitle>
+              <CardDescription>Receita Total vs Custo Operacional (Consolidado)</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={serieFaturamento}>
+                <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#1e4ef5" stopOpacity={0.35} />
@@ -106,18 +131,18 @@ export function Dashboard() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Mix de serviços</CardTitle>
-              <CardDescription>Distribuição por faturamento</CardDescription>
+              <CardTitle>Mix de Faturamento</CardTitle>
+              <CardDescription>Distribuição Fixos vs Avulsos</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
-                  <Pie data={distribuicaoServicos} dataKey="valor" nameKey="servico" innerRadius={50} outerRadius={90} paddingAngle={2}>
-                    {distribuicaoServicos.map((_, i) => (
+                  <Pie data={mixServicos} dataKey="valor" nameKey="servico" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                    {mixServicos.map((_, i) => (
                       <Cell key={i} fill={chartColors[i % chartColors.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => `${v}%`} />
+                  <Tooltip formatter={(v: number) => formatBRL(v)} />
                   <Legend iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
@@ -129,7 +154,7 @@ export function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Financeiro</CardTitle>
-              <CardDescription>Posição do mês corrente</CardDescription>
+              <CardDescription>Fluxo de caixa aberto</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <MiniStat label="A receber (aberto)" value={formatBRL(aReceberAberto)} icon={<ArrowUpRight className="h-4 w-4 text-emerald-600" />} />
@@ -139,19 +164,19 @@ export function Dashboard() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Absenteísmo (%)</CardTitle>
-              <CardDescription>Últimos 6 meses</CardDescription>
+              <CardTitle>Escalas e Turnos</CardTitle>
+              <CardDescription>Cobertura operacional</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={serieAbsenteismo}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="mes" stroke="#64748b" fontSize={12} />
-                  <YAxis stroke="#64748b" fontSize={12} />
-                  <Tooltip formatter={(v: number) => `${v}%`} />
-                  <Line type="monotone" dataKey="taxa" stroke="#1e4ef5" strokeWidth={2} dot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent className="space-y-4">
+               <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Alocações no mês</span>
+                  <span className="font-semibold">{useStore.getState().escalas.length}</span>
+               </div>
+               <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Faltas registradas</span>
+                  <span className="font-semibold text-red-600">{useStore.getState().escalas.filter(e => e.status === 'falta').length}</span>
+               </div>
+               <Button variant="outline" className="w-full text-xs" asChild><Link to="/escalas">Ver escalas completas</Link></Button>
             </CardContent>
           </Card>
           <Card>
@@ -160,7 +185,7 @@ export function Dashboard() {
                 Alertas
                 <Badge tone="danger">{ocoAbertas.length + estoqueBaixo.length}</Badge>
               </CardTitle>
-              <CardDescription>Itens que exigem atenção</CardDescription>
+              <CardDescription>Prioridade máxima</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {ocoAbertas.slice(0, 3).map((o) => (
@@ -193,32 +218,36 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* Top contratos rentabilidade */}
+        {/* Rentabilidade real dos contratos ativos */}
         <Card>
           <CardHeader>
             <CardTitle>Rentabilidade por contrato</CardTitle>
-            <CardDescription>Top contratos ativos — margem % sobre receita</CardDescription>
+            <CardDescription>Margem real calculada (Receita - Custo Mensal)</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={contratosAtivos.map((c) => ({
-                nome: c.numero,
-                margem: +((c.valorMensal - c.custoMensal) / c.valorMensal * 100).toFixed(1),
-                receita: c.valorMensal,
-              }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="nome" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={12} unit="%" />
-                <Tooltip formatter={(v: number) => `${v}%`} />
-                <Bar dataKey="margem" radius={[4, 4, 0, 0]}>
-                  {contratosAtivos.map((c, i) => {
-                    const m = (c.valorMensal - c.custoMensal) / c.valorMensal * 100
-                    const color = m < 5 ? '#ef4444' : m < 12 ? '#f59e0b' : '#10b981'
-                    return <Cell key={i} fill={color} />
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {contratosAtivos.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-sm italic">Nenhum contrato ativo para exibir rentabilidade.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={contratosAtivos.map((c) => ({
+                  nome: c.numero,
+                  margem: +((c.valorMensal - c.custoMensal) / c.valorMensal * 100).toFixed(1),
+                  receita: c.valorMensal,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="nome" stroke="#64748b" fontSize={11} />
+                  <YAxis stroke="#64748b" fontSize={12} unit="%" />
+                  <Tooltip formatter={(v: number) => `${v}%`} />
+                  <Bar dataKey="margem" radius={[4, 4, 0, 0]}>
+                    {contratosAtivos.map((c, i) => {
+                      const m = (c.valorMensal - c.custoMensal) / c.valorMensal * 100
+                      const color = m < 5 ? '#ef4444' : m < 12 ? '#f59e0b' : '#10b981'
+                      return <Cell key={i} fill={color} />
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>

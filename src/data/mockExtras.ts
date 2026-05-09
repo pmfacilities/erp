@@ -144,7 +144,12 @@ export const servicosAvulsosSeed: ServicoAvulso[] = [
 ]
 
 // ---- Pagamentos a colaboradores (serviços avulsos) ----
-export const pagamentosAvulsosSeed: PagamentoAvulso[] = []
+export const pagamentosAvulsosSeed: PagamentoAvulso[] = [
+  { id: 'pa-001', diaTrabalhado: '2026-04-23', colaborador: 'Natasha Neto de Souza', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
+  { id: 'pa-002', diaTrabalhado: '2026-04-23', colaborador: 'Gerson Net', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
+  { id: 'pa-003', diaTrabalhado: '2026-04-23', colaborador: 'Lucas', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
+  { id: 'pa-004', diaTrabalhado: '2026-04-23', colaborador: 'Alessandra', valor: 90, quemPagou: 'Jonathan', status: 'pago', servicoAvulsoId: 'sa-hera-01', descricao: 'Diária serviço Hera' },
+]
 
 // ---- Prestadores de serviço (parcerias potenciais) ----
 export const prestadoresSeed: Prestador[] = []

@@ -16,6 +16,8 @@ export function RequirePerfil({ perfisPermitidos, children }: Props) {
 
   if (sessao && perfisPermitidos.includes(sessao.perfil)) return <>{children}</>
 
+  // Fallback case: session exists but profile not allowed, or no session
+  const currentPerfil = sessao?.perfil || 'Visitante'
   return (
     <div className="p-6">
       <Card>
@@ -26,7 +28,7 @@ export function RequirePerfil({ perfisPermitidos, children }: Props) {
           <div className="text-xl font-semibold text-slate-900 mb-1">Acesso restrito</div>
           <div className="text-sm text-slate-600 mb-4">
             Esta área contém informações confidenciais reservadas aos <strong>sócios da PS Facilities</strong>. Seu perfil
-            atual{sessao && <> (<Badge>{sessao.perfil.replace('_', ' ')}</Badge>)</>} não possui permissão para acessá-la.
+            atual (<Badge>{currentPerfil.replace('_', ' ')}</Badge>) não possui permissão para acessá-la.
           </div>
           <Button variant="outline" onClick={() => navigate('/')}>Voltar ao Dashboard</Button>
         </CardContent>

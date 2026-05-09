@@ -120,6 +120,11 @@ interface State {
   updateServicoAvulso: (id: string, patch: Partial<ServicoAvulso>) => Promise<void>
   removeServicoAvulso: (id: string) => Promise<void>
 
+  // pagamentos avulsos
+  addPagamentoAvulso: (p: Omit<PagamentoAvulso, 'id'>) => Promise<void>
+  updatePagamentoAvulso: (id: string, patch: Partial<PagamentoAvulso>) => Promise<void>
+  removePagamentoAvulso: (id: string) => Promise<void>
+
   // despesas
   addDespesa: (d: Omit<Despesa, 'id'>) => Promise<void>
   updateDespesa: (id: string, patch: Partial<Despesa>) => Promise<void>
@@ -141,7 +146,7 @@ interface State {
 export const useStore = create<State>((set, get) => ({
   autenticado: false,
   sessao: null,
-  loading: false,
+  loading: true,
   
   clientes: [],
   contratos: [],
@@ -346,6 +351,22 @@ export const useStore = create<State>((set, get) => ({
           }
         }
       }
+
+      // Garante que o cliente Hera existe se houver serviços dele
+      const { clientes } = get()
+      if (clientes.length > 0 && !clientes.some(c => c.nomeFantasia.includes('Hera'))) {
+        await get().addCliente({
+          razaoSocial: 'CONSTRUTORA HERA LTDA',
+          nomeFantasia: 'Construtora Hera',
+          cnpj: '20.959.916/0003-42',
+          email: 'contato@hera.com.br',
+          telefone: '-',
+          cidade: 'São Paulo',
+          uf: 'SP',
+          status: 'ativo',
+          contatoResponsavel: 'Nathan'
+        })
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -437,11 +458,15 @@ export const useStore = create<State>((set, get) => ({
   },
   updateCliente: async (id, patch) => {
     const p: any = {}
-    if (patch.razaoSocial) p.razao_social = patch.razaoSocial
-    if (patch.nomeFantasia) p.nome_fantasia = patch.nomeFantasia
-    if (patch.cnpj) p.cnpj = patch.cnpj
-    if (patch.status) p.status = patch.status
-    // ... outros campos seriam mapeados aqui
+    if (patch.razaoSocial !== undefined) p.razao_social = patch.razaoSocial
+    if (patch.nomeFantasia !== undefined) p.nome_fantasia = patch.nomeFantasia
+    if (patch.cnpj !== undefined) p.cnpj = patch.cnpj
+    if (patch.email !== undefined) p.email = patch.email
+    if (patch.telefone !== undefined) p.telefone = patch.telefone
+    if (patch.cidade !== undefined) p.cidade = patch.cidade
+    if (patch.uf !== undefined) p.uf = patch.uf
+    if (patch.status !== undefined) p.status = patch.status
+    if (patch.contatoResponsavel !== undefined) p.contato_responsavel = patch.contatoResponsavel
     const { error } = await supabase.from('clientes').update(p).eq('id', id)
     if (!error) await get().fetchData()
   },
@@ -627,12 +652,49 @@ export const useStore = create<State>((set, get) => ({
     await get().fetchData()
   },
   updateServicoAvulso: async (id, patch) => {
-    await supabase.from('servicos_avulsos').update({ status: patch.status }).eq('id', id)
+    const update: any = {}
+    if (patch.numero !== undefined) update.numero = patch.numero
+    if (patch.data !== undefined) update.data = patch.data
+    if (patch.cliente !== undefined) update.cliente = patch.cliente
+    if (patch.tipo !== undefined) update.tipo = patch.tipo
+    if (patch.descricao !== undefined) update.descricao = patch.descricao
+    if (patch.endereco !== undefined) update.endereco = patch.endereco
+    if (patch.valorBruto !== undefined) update.valor_bruto = patch.valorBruto
+    if (patch.custoMaoDeObra !== undefined) update.custo_mao_de_obra = patch.custoMaoDeObra
+    if (patch.custoMaterial !== undefined) update.custo_material = patch.custoMaterial
+    if (patch.status !== undefined) update.status = patch.status
+    if (patch.responsavel !== undefined) update.responsavel = patch.responsavel
+    if (patch.observacao !== undefined) update.observacao = patch.observacao
+    await supabase.from('servicos_avulsos').update(update).eq('id', id)
     await get().fetchData()
   },
   removeServicoAvulso: async (id) => {
-    await supabase.from('servicos_avulsos').delete().eq('id', id)
+    // Deletar escalas vinculadas primeiro (FK constraint)
+    await supabase.from('escalas').delete().eq('servico_avulso_id', id)
+    const { error } = await supabase.from('servicos_avulsos').delete().eq('id', id)
+    if (error) {
+      console.error('Erro ao remover serviço:', error)
+      get().pushToast({ titulo: 'Erro ao remover', descricao: error.message, tipo: 'error' })
+    }
     await get().fetchData()
+  },
+
+  // Pagamentos avulsos (in-memory, persisted via Supabase pagamentos_avulsos table if available)
+  addPagamentoAvulso: async (p) => {
+    const id = uid()
+    set((s) => ({ pagamentosAvulsos: [...s.pagamentosAvulsos, { ...p, id } as PagamentoAvulso] }))
+  },
+  updatePagamentoAvulso: async (id, patch) => {
+    set((s) => ({
+      pagamentosAvulsos: s.pagamentosAvulsos.map((p) =>
+        p.id === id ? { ...p, ...patch } : p
+      ),
+    }))
+  },
+  removePagamentoAvulso: async (id) => {
+    set((s) => ({
+      pagamentosAvulsos: s.pagamentosAvulsos.filter((p) => p.id !== id),
+    }))
   },
 
   addDespesa: async (d) => {
@@ -647,7 +709,14 @@ export const useStore = create<State>((set, get) => ({
     await get().fetchData()
   },
   updateDespesa: async (id, patch) => {
-    await supabase.from('despesas').update({ reembolsado: patch.reembolsado }).eq('id', id)
+    const update: any = {}
+    if (patch.data !== undefined) update.data = patch.data
+    if (patch.descricao !== undefined) update.descricao = patch.descricao
+    if (patch.categoria !== undefined) update.categoria = patch.categoria
+    if (patch.valor !== undefined) update.valor = patch.valor
+    if (patch.quemComprou !== undefined) update.quem_comprou = patch.quemComprou
+    if (patch.reembolsado !== undefined) update.reembolsado = patch.reembolsado
+    await supabase.from('despesas').update(update).eq('id', id)
     await get().fetchData()
   },
   removeDespesa: async (id) => {

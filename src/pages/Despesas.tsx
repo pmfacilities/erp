@@ -76,7 +76,7 @@ export function Despesas() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card><CardContent><div className="text-xs text-slate-500">Total período</div><div className="text-2xl font-bold text-slate-900">{formatBRL(totalGeral)}</div></CardContent></Card>
           <Card><CardContent><div className="text-xs text-slate-500">Filtrado</div><div className="text-2xl font-bold text-brand-600">{formatBRL(totalFiltrado)}</div><div className="text-xs text-slate-500 mt-0.5">{filtradas.length} itens</div></CardContent></Card>
-          <Card><CardContent><div className="text-xs text-slate-500">Maior categoria</div><div className="text-lg font-bold text-slate-900 truncate">{porCategoria.sort((a, b) => b.valor - a.valor)[0]?.categoria || '—'}</div><div className="text-xs text-slate-500">{formatBRL(porCategoria.sort((a, b) => b.valor - a.valor)[0]?.valor || 0)}</div></CardContent></Card>
+          <Card><CardContent><div className="text-xs text-slate-500">Maior categoria</div><div className="text-lg font-bold text-slate-900 truncate">{(porCategoria || []).sort((a, b) => b.valor - a.valor)[0]?.categoria || '—'}</div><div className="text-xs text-slate-500">{formatBRL((porCategoria || []).sort((a, b) => b.valor - a.valor)[0]?.valor || 0)}</div></CardContent></Card>
           <Card><CardContent><div className="text-xs text-slate-500">Maior pagador</div><div className="text-lg font-bold text-slate-900 truncate">{porPessoa.sort((a, b) => b.valor - a.valor)[0]?.nome || '—'}</div><div className="text-xs text-slate-500">{formatBRL(porPessoa.sort((a, b) => b.valor - a.valor)[0]?.valor || 0)}</div></CardContent></Card>
         </div>
 
@@ -172,11 +172,16 @@ export function Despesas() {
                       <TD className="text-right font-semibold">{formatBRL(d.valor)}</TD>
                       <TD>
                         {d.reembolsado
-                          ? <Badge tone="success"><CheckCircle2 className="h-3 w-3" /> Reembolsado</Badge>
+                          ? <button onClick={() => {
+                              updateDespesa(d.id, { reembolsado: false })
+                              pushToast({ titulo: 'Reembolso revertido', tipo: 'info' })
+                            }} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer" title="Clique para reverter">
+                              <CheckCircle2 className="h-3 w-3" /> Reembolsado
+                            </button>
                           : <button onClick={() => {
                               updateDespesa(d.id, { reembolsado: true })
                               pushToast({ titulo: 'Reembolso marcado', tipo: 'success' })
-                            }} className="text-xs text-brand-600 hover:underline">Marcar reembolsado</button>}
+                            }} className="text-xs text-brand-600 hover:underline cursor-pointer">Marcar reembolsado</button>}
                       </TD>
                       <TD className="text-right whitespace-nowrap">
                         <Button variant="ghost" size="sm" onClick={() => { setEdit(d); setOpen(true) }}>

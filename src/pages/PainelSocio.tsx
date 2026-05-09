@@ -17,12 +17,12 @@ import { AcertoSociosCard } from '@/components/AcertoSociosCard'
 export function PainelSocio() {
   const { proLabore, empresa, sessao, servicosAvulsos, contratos } = useStore()
   const caixaReal = useCaixaConsolidado()
-  const aplicacao = aplicarRegra(caixaReal.caixaBrutoAcumulado, proLabore)
+  const aplicacao = aplicarRegra(caixaReal?.caixaBrutoAcumulado || 0, proLabore || { reservaDAS: 0.2, reservaOperacional: 0.1, gatilhoMinimo: 12000, pctCapitalizacao: 0.4, pctDistribuicao: 0.6, numSocios: 4 })
 
   const metaMes = 30000 // meta fim Fase 1
-  const progressoMeta = Math.min(100, (caixaReal.receitaTotal / metaMes) * 100)
-  const receitaRecorrente = contratos.filter((c) => c.status === 'ativo').reduce((a, c) => a + c.valorMensal, 0)
-  const servicosAvulsosMes = servicosAvulsos.filter((s) => ['concluido', 'faturado'].includes(s.status)).length
+  const progressoMeta = Math.min(100, ((caixaReal?.receitaTotal || 0) / metaMes) * 100)
+  const receitaRecorrente = (contratos || []).filter((c) => c.status === 'ativo').reduce((a, c) => a + c.valorMensal, 0)
+  const servicosAvulsosMes = (servicosAvulsos || []).filter((s) => ['concluido', 'faturado'].includes(s.status)).length
 
   return (
     <>

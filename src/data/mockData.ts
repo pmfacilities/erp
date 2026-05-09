@@ -195,7 +195,12 @@ export const clientesMock: Cliente[] = [
 
 export const contratosMock: Contrato[] = []
 
-export const funcionariosMock: Funcionario[] = []
+export const funcionariosMock: Funcionario[] = [
+  { id: 'fun-nat', nome: 'Natasha Neto de Souza', cpf: '000.000.000-00', cargo: 'Auxiliar de Limpeza', status: 'avulso', turno: 'diaria', salario: 0, admissao: '2026-04-23', telefone: '', asoValidade: '2027-04-23' },
+  { id: 'fun-ger', nome: 'Gerson Net', cpf: '000.000.000-00', cargo: 'Ajudante Geral', status: 'avulso', turno: 'diaria', salario: 0, admissao: '2026-04-23', telefone: '', asoValidade: '2027-04-23' },
+  { id: 'fun-luc', nome: 'Lucas', cpf: '000.000.000-00', cargo: 'Ajudante Geral', status: 'avulso', turno: 'diaria', salario: 0, admissao: '2026-04-20', telefone: '', asoValidade: '2027-04-20' },
+  { id: 'fun-ale', nome: 'Alessandra', cpf: '000.000.000-00', cargo: 'Auxiliar de Limpeza', status: 'avulso', turno: 'diaria', salario: 0, admissao: '2026-04-20', telefone: '', asoValidade: '2027-04-20' },
+]
 
 // ---------- Escala semanal (seed para próximos 7 dias a partir da data base) ----------
 const hoje = new Date('2026-04-20') // segunda
@@ -204,30 +209,23 @@ function dPlus(n: number) {
 }
 
 export const escalaMock: EscalaTurno[] = [
-  // Seg
-  { id: 'esc-01', data: dPlus(0), funcionarioId: 'fun-001', postoNome: 'Piso L1', contratoId: 'ctr-001', inicio: '06:00', fim: '14:00', status: 'agendado' },
-  { id: 'esc-02', data: dPlus(0), funcionarioId: 'fun-002', postoNome: 'Portaria Principal', contratoId: 'ctr-001', inicio: '07:00', fim: '19:00', status: 'presente' },
-  { id: 'esc-03', data: dPlus(0), funcionarioId: 'fun-003', postoNome: 'UTI', contratoId: 'ctr-002', inicio: '06:00', fim: '14:00', status: 'presente' },
-  { id: 'esc-04', data: dPlus(0), funcionarioId: 'fun-006', postoNome: 'Portaria 1', contratoId: 'ctr-003', inicio: '19:00', fim: '07:00', status: 'agendado' },
-  // Ter
-  { id: 'esc-05', data: dPlus(1), funcionarioId: 'fun-001', postoNome: 'Piso L1', contratoId: 'ctr-001', inicio: '06:00', fim: '14:00', status: 'agendado' },
-  { id: 'esc-06', data: dPlus(1), funcionarioId: 'fun-007', postoNome: 'Enfermarias', contratoId: 'ctr-002', inicio: '14:00', fim: '22:00', status: 'agendado' },
-  { id: 'esc-07', data: dPlus(1), funcionarioId: 'fun-014', postoNome: 'Portaria', contratoId: 'ctr-004', inicio: '07:00', fim: '19:00', status: 'agendado' },
-  // Qua
-  { id: 'esc-08', data: dPlus(2), funcionarioId: 'fun-002', postoNome: 'Portaria Principal', contratoId: 'ctr-001', inicio: '07:00', fim: '19:00', status: 'agendado' },
-  { id: 'esc-09', data: dPlus(2), funcionarioId: 'fun-011', postoNome: 'Campus Sede', contratoId: 'ctr-006', inicio: '06:00', fim: '14:00', status: 'falta' },
-  { id: 'esc-10', data: dPlus(2), funcionarioId: 'fun-004', postoNome: 'Manutenção', contratoId: 'ctr-003', inicio: '08:00', fim: '17:00', status: 'agendado' },
-  // Qui
-  { id: 'esc-11', data: dPlus(3), funcionarioId: 'fun-009', postoNome: 'Prefeitura', contratoId: 'ctr-005', inicio: '06:00', fim: '14:00', status: 'agendado' },
-  { id: 'esc-12', data: dPlus(3), funcionarioId: 'fun-013', postoNome: 'Rede 8 lojas', contratoId: 'ctr-007', inicio: '13:00', fim: '21:00', status: 'agendado' },
-  // Sex
-  { id: 'esc-13', data: dPlus(4), funcionarioId: 'fun-003', postoNome: 'UTI', contratoId: 'ctr-002', inicio: '06:00', fim: '14:00', status: 'agendado' },
-  { id: 'esc-14', data: dPlus(4), funcionarioId: 'fun-008', postoNome: 'Zelador', contratoId: 'ctr-004', inicio: '07:00', fim: '16:00', status: 'agendado' },
-  // Sab
-  { id: 'esc-15', data: dPlus(5), funcionarioId: 'fun-015', postoNome: 'Secretarias', contratoId: 'ctr-005', inicio: '06:00', fim: '14:00', status: 'agendado' },
-  { id: 'esc-16', data: dPlus(5), funcionarioId: 'fun-006', postoNome: 'Portaria 1', contratoId: 'ctr-003', inicio: '19:00', fim: '07:00', status: 'agendado' },
-  // Dom
-  { id: 'esc-17', data: dPlus(6), funcionarioId: 'fun-002', postoNome: 'Portaria Principal', contratoId: 'ctr-001', inicio: '07:00', fim: '19:00', status: 'agendado' },
+  // Data: 20/04 - Alessandra e Lucas (08h às 17h00)
+  { id: 'esc-hera-20-1', data: '2026-04-20', funcionarioId: 'fun-ale', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '17:00', status: 'presente' },
+  { id: 'esc-hera-20-2', data: '2026-04-20', funcionarioId: 'fun-luc', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '17:00', status: 'presente' },
+  
+  // Data: 21/04 - Alessandra e Lucas (08h às 19h)
+  { id: 'esc-hera-21-1', data: '2026-04-21', funcionarioId: 'fun-ale', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '19:00', status: 'presente' },
+  { id: 'esc-hera-21-2', data: '2026-04-21', funcionarioId: 'fun-luc', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '19:00', status: 'presente' },
+
+  // Data: 22/04 - Lucas e Alessandra (08h às 19h00)
+  { id: 'esc-hera-22-1', data: '2026-04-22', funcionarioId: 'fun-luc', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '19:00', status: 'presente' },
+  { id: 'esc-hera-22-2', data: '2026-04-22', funcionarioId: 'fun-ale', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '19:00', status: 'presente' },
+
+  // Data: 23/04 - Natasha, Gerson, Lucas e Alessandra (08h às 11h)
+  { id: 'esc-hera-23-1', data: '2026-04-23', funcionarioId: 'fun-nat', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '11:00', status: 'presente' },
+  { id: 'esc-hera-23-2', data: '2026-04-23', funcionarioId: 'fun-ger', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '11:00', status: 'presente' },
+  { id: 'esc-hera-23-3', data: '2026-04-23', funcionarioId: 'fun-luc', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '11:00', status: 'presente' },
+  { id: 'esc-hera-23-4', data: '2026-04-23', funcionarioId: 'fun-ale', postoNome: 'Obra Hera', contratoId: '', servicoAvulsoId: 'sa-hera-01', inicio: '08:00', fim: '11:00', status: 'presente' },
 ]
 
 export const ordensMock: OrdemServico[] = [
