@@ -11,6 +11,7 @@ interface Props {
   children: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl'
   footer?: ReactNode
+  contentClassName?: string
 }
 
 const sizes = {
@@ -20,7 +21,7 @@ const sizes = {
   xl: 'max-w-4xl',
 }
 
-export function Dialog({ open, onClose, title, description, children, size = 'md', footer }: Props) {
+export function Dialog({ open, onClose, title, description, children, size = 'md', footer, contentClassName }: Props) {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -45,7 +46,7 @@ export function Dialog({ open, onClose, title, description, children, size = 'md
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
         </div>
-        <div className="p-5 overflow-y-auto flex-1">{children}</div>
+        <div className={cn('p-5 overflow-y-auto flex-1', contentClassName)}>{children}</div>
         {footer && <div className="flex items-center justify-end gap-2 p-5 border-t border-slate-100 bg-slate-50/50">{footer}</div>}
       </div>
     </div>

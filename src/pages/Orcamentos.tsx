@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { Input, Label } from '@/components/ui/Input'
-import { formatBRL } from '@/lib/utils'
+import { formatBRL, cn } from '@/lib/utils'
 import { Orcamento, OrcamentoItem } from '@/data/mockExtras'
 
 export function Orcamentos() {
@@ -84,19 +84,14 @@ export function Orcamentos() {
       valorTotal: Number(it.quantidade) * Number(it.valorUnitario)
     })))
 
-    // Apenas se não houver erro (o addOrcamento no store já mostra o toast de erro)
-    // Precisamos que o addOrcamento retorne algo para sabermos.
-    // Vou ajustar o store para retornar boolean.
-    
-    setModalNovo(false)
-    // pushToast({ titulo: 'Orçamento criado', tipo: 'success' }) // Removido daqui, o store vai gerenciar
-    
-    // Reset
-    setNovo({
-      clienteNome: '', clienteContato: '', clienteEmail: '', clienteEndereco: '',
-      observacoes: '', condicoesPagamento: '30 dias', validadeDias: 7
-    })
-    setItens([{ descricao: '', quantidade: 1, valorUnitario: 0 }])
+    if (success) {
+      setModalNovo(false)
+      setNovo({
+        clienteNome: '', clienteContato: '', clienteEmail: '', clienteEndereco: '',
+        observacoes: '', condicoesPagamento: '30 dias', validadeDias: 7
+      })
+      setItens([{ descricao: '', quantidade: 1, valorUnitario: 0 }])
+    }
   }
 
   const handleCopyWhatsApp = (o: Orcamento) => {
@@ -119,13 +114,13 @@ export function Orcamentos() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Gerador de Orçamentos</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">Gerador de Orçamentos</h1>
           <p className="text-slate-500 text-sm">Crie, envie e gerencie propostas comerciais</p>
         </div>
-        <Button onClick={() => setModalNovo(true)} className="bg-brand-600 hover:bg-brand-700">
+        <Button onClick={() => setModalNovo(true)} className="bg-brand-600 hover:bg-brand-700 w-full md:w-auto">
           <Plus className="h-4 w-4 mr-2" /> Novo Orçamento
         </Button>
       </div>
@@ -150,7 +145,7 @@ export function Orcamentos() {
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{o.numero}</div>
-                  <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">{o.clienteNome}</div>
+                  <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors truncate max-w-[150px]">{o.clienteNome}</div>
                 </div>
                 <StatusBadge status={o.status} />
               </div>
@@ -164,7 +159,7 @@ export function Orcamentos() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1 text-xs" 
+                  className="flex-1 text-xs h-8" 
                   onClick={() => setModalDetalhes(o)}
                 >
                   <FileText className="h-3.5 w-3.5 mr-1" /> Detalhes
@@ -172,7 +167,7 @@ export function Orcamentos() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="px-2"
+                  className="px-2 h-8"
                   onClick={() => handleCopyWhatsApp(o)}
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
@@ -180,7 +175,7 @@ export function Orcamentos() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="px-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                  className="px-2 h-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                   onClick={() => {
                     if (confirm('Excluir orçamento?')) removeOrcamento(o.id)
                   }}
@@ -201,7 +196,6 @@ export function Orcamentos() {
         size="xl"
       >
         <div className="space-y-6">
-          {/* Dados do Cliente */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
               <div>
@@ -244,7 +238,6 @@ export function Orcamentos() {
 
           <hr className="border-slate-100" />
 
-          {/* Itens do Serviço */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">Itens e Serviços</h3>
@@ -254,7 +247,7 @@ export function Orcamentos() {
             </div>
             <div className="space-y-3">
               {itens.map((it, idx) => (
-                <div key={idx} className="flex flex-col md:flex-row gap-2 items-end bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                <div key={idx} className="flex flex-col md:flex-row gap-2 items-end bg-slate-50/50 p-3 rounded-lg border border-slate-100 relative group/item">
                   <div className="flex-1 w-full">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Descrição do Serviço</span>
                     <Input 
@@ -264,23 +257,25 @@ export function Orcamentos() {
                       onChange={(e) => handleItemChange(idx, 'descricao', e.target.value)}
                     />
                   </div>
-                  <div className="w-full md:w-24">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Qtd</span>
-                    <Input 
-                      type="number"
-                      className="bg-white"
-                      value={it.quantidade}
-                      onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
-                    />
-                  </div>
-                  <div className="w-full md:w-32">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Vlr Unitário</span>
-                    <Input 
-                      type="number"
-                      className="bg-white"
-                      value={it.valorUnitario}
-                      onChange={(e) => handleItemChange(idx, 'valorUnitario', e.target.value)}
-                    />
+                  <div className="flex gap-2 w-full md:w-auto">
+                    <div className="w-20">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Qtd</span>
+                      <Input 
+                        type="number"
+                        className="bg-white"
+                        value={it.quantidade}
+                        onChange={(e) => handleItemChange(idx, 'quantidade', e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1 md:w-32">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Vlr Unitário</span>
+                      <Input 
+                        type="number"
+                        className="bg-white"
+                        value={it.valorUnitario}
+                        onChange={(e) => handleItemChange(idx, 'valorUnitario', e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div className="w-full md:w-32">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Subtotal</span>
@@ -290,7 +285,7 @@ export function Orcamentos() {
                   </div>
                   <button 
                     onClick={() => handleRemoveItem(idx)}
-                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-slate-400 hover:text-red-500 transition-colors md:relative absolute top-2 right-2"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -299,7 +294,6 @@ export function Orcamentos() {
             </div>
           </div>
 
-          {/* Totais e Rodapé do form */}
           <div className="bg-brand-50 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="grid grid-cols-2 gap-4 flex-1 w-full">
               <div>
@@ -320,15 +314,15 @@ export function Orcamentos() {
                 />
               </div>
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-right flex-shrink-0 w-full md:w-auto">
               <div className="text-xs text-brand-600 font-bold uppercase tracking-widest">Total Geral</div>
               <div className="text-3xl font-black text-brand-900">{formatBRL(totalOrcamento)}</div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => setModalNovo(false)}>Cancelar</Button>
-            <Button onClick={handleSalvar} className="bg-brand-600 hover:bg-brand-700 px-8">Salvar Orçamento</Button>
+          <div className="flex flex-col-reverse md:flex-row justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={() => setModalNovo(false)} className="w-full md:w-auto">Cancelar</Button>
+            <Button onClick={handleSalvar} className="bg-brand-600 hover:bg-brand-700 px-8 w-full md:w-auto">Salvar Orçamento</Button>
           </div>
         </div>
       </Dialog>
@@ -339,105 +333,125 @@ export function Orcamentos() {
         onClose={() => setModalDetalhes(null)} 
         title={`Orçamento: ${modalDetalhes?.numero}`}
         size="xl"
+        contentClassName="p-2 md:p-6"
       >
         {modalDetalhes && (
           <div className="space-y-6">
-            <div id="pdf-content" className="bg-white p-8 border border-slate-200 rounded-lg shadow-sm font-sans text-slate-800">
+            <div id="pdf-content" className="bg-white p-4 md:p-10 border border-slate-200 rounded-lg shadow-sm font-sans text-slate-800 overflow-x-hidden">
               {/* Cabeçalho do Orçamento */}
-              <div className="flex justify-between items-start mb-8 pb-8 border-b border-slate-100">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-8 border-b border-slate-100">
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-brand-600 font-black text-xl italic uppercase tracking-tighter">
-                    <Building2 className="h-6 w-6" /> {empresa.nomeFantasia}
+                  <div className="flex items-center gap-2 text-brand-600 font-black text-2xl italic uppercase tracking-tighter">
+                    <Building2 className="h-8 w-8" /> {empresa.nomeFantasia}
                   </div>
-                  <div className="text-[10px] text-slate-500 leading-relaxed uppercase">
+                  <div className="text-[10px] text-slate-500 leading-relaxed uppercase max-w-[250px]">
                     {empresa.razaoSocial} • CNPJ: {empresa.cnpj}<br />
                     {empresa.endereco}, {empresa.cidade}-{empresa.uf}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-left md:text-right w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-slate-50">
                   <div className="text-2xl font-black text-slate-900 uppercase italic leading-none">Orçamento</div>
-                  <div className="text-sm font-bold text-brand-600">{modalDetalhes.numero}</div>
-                  <div className="text-xs text-slate-500 mt-2">{new Date(modalDetalhes.dataEmissao).toLocaleDateString('pt-BR')}</div>
+                  <div className="text-sm font-bold text-brand-600 mt-1">{modalDetalhes.numero}</div>
+                  <div className="text-xs text-slate-500 mt-1">{new Date(modalDetalhes.dataEmissao).toLocaleDateString('pt-BR')}</div>
                 </div>
               </div>
 
               {/* Infos do Cliente */}
-              <div className="grid grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div className="space-y-3">
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
                     <User className="h-3 w-3" /> Destinatário
                   </div>
-                  <div className="font-bold text-slate-900 uppercase">{modalDetalhes.clienteNome}</div>
-                  <div className="text-xs text-slate-600 space-y-1">
-                    {modalDetalhes.clienteEndereco && <div className="flex items-center gap-2"><MapPin className="h-3 w-3 text-slate-400" /> {modalDetalhes.clienteEndereco}</div>}
-                    {modalDetalhes.clienteContato && <div className="flex items-center gap-2"><Phone className="h-3 w-3 text-slate-400" /> {modalDetalhes.clienteContato}</div>}
-                    {modalDetalhes.clienteEmail && <div className="flex items-center gap-2"><Mail className="h-3 w-3 text-slate-400" /> {modalDetalhes.clienteEmail}</div>}
+                  <div className="font-bold text-slate-900 uppercase text-lg">{modalDetalhes.clienteNome}</div>
+                  <div className="text-xs text-slate-600 space-y-2">
+                    {modalDetalhes.clienteEndereco && <div className="flex items-start gap-2"><MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0 mt-0.5" /> <span>{modalDetalhes.clienteEndereco}</span></div>}
+                    {modalDetalhes.clienteContato && <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" /> <span>{modalDetalhes.clienteContato}</span></div>}
+                    {modalDetalhes.clienteEmail && <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" /> <span>{modalDetalhes.clienteEmail}</span></div>}
                   </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg flex flex-col justify-center">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Resumo de Condições</div>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between"><span>Pagamento:</span> <span className="font-bold">{modalDetalhes.condicoesPagamento}</span></div>
-                    <div className="flex justify-between"><span>Validade:</span> <span className="font-bold">{modalDetalhes.validadeDias} dias</span></div>
+                <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 flex flex-col justify-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Resumo de Condições</div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between pb-1 border-b border-slate-200/50">
+                      <span className="text-slate-500">Pagamento:</span> 
+                      <span className="font-bold text-slate-700">{modalDetalhes.condicoesPagamento}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Validade:</span> 
+                      <span className="font-bold text-slate-700">{modalDetalhes.validadeDias} dias</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Tabela de Itens */}
-              <div className="mb-8">
-                <div className="grid grid-cols-12 gap-2 bg-slate-900 text-white p-2 rounded-t-lg text-[10px] font-bold uppercase">
+              {/* Tabela de Itens (Responsiva) */}
+              <div className="mb-8 overflow-hidden rounded-xl border border-slate-100 shadow-sm">
+                <div className="hidden md:grid grid-cols-12 gap-2 bg-slate-900 text-white p-3 text-[10px] font-bold uppercase tracking-wider">
                   <div className="col-span-6">Descrição do Serviço</div>
                   <div className="col-span-2 text-center">Qtd</div>
                   <div className="col-span-2 text-right">Unitário</div>
                   <div className="col-span-2 text-right">Total</div>
                 </div>
-                <div className="border-x border-b border-slate-100 rounded-b-lg divide-y divide-slate-50">
+                
+                <div className="divide-y divide-slate-100">
                   {modalDetalhes.itens.map((it) => (
-                    <div key={it.id} className="grid grid-cols-12 gap-2 p-3 text-sm items-center">
-                      <div className="col-span-6 font-medium text-slate-700">{it.descricao}</div>
-                      <div className="col-span-2 text-center text-slate-500">{it.quantidade}</div>
-                      <div className="col-span-2 text-right text-slate-500">{formatBRL(it.valorUnitario)}</div>
-                      <div className="col-span-2 text-right font-bold text-slate-900">{formatBRL(it.valorTotal)}</div>
+                    <div key={it.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 p-4 text-sm items-center hover:bg-slate-50/50 transition-colors">
+                      <div className="col-span-6 font-semibold text-slate-800 md:font-medium">
+                        <span className="md:hidden text-[10px] font-bold text-slate-400 block uppercase mb-1">Serviço</span>
+                        {it.descricao}
+                      </div>
+                      <div className="col-span-2 text-slate-600 flex md:block justify-between items-center border-t md:border-t-0 pt-2 md:pt-0 mt-2 md:mt-0">
+                        <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Qtd</span>
+                        <span className="md:text-center md:block">{it.quantidade}</span>
+                      </div>
+                      <div className="col-span-2 text-slate-600 flex md:block justify-between items-center">
+                        <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Valor Unit.</span>
+                        <span className="md:text-right md:block">{formatBRL(it.valorUnitario)}</span>
+                      </div>
+                      <div className="col-span-2 flex md:block justify-between items-center">
+                        <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Subtotal</span>
+                        <span className="md:text-right md:block font-black text-slate-900">{formatBRL(it.valorTotal)}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Total e Observações */}
-              <div className="flex flex-col md:flex-row justify-between items-start gap-8">
-                <div className="flex-1 space-y-2">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Observações Importantes</div>
-                  <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 italic leading-relaxed min-h-[60px]">
+              <div className="flex flex-col md:flex-row justify-between items-stretch md:items-start gap-8">
+                <div className="flex-1 space-y-3">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <FileText className="h-3 w-3" /> Observações Importantes
+                  </div>
+                  <div className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100 italic leading-relaxed min-h-[80px]">
                     {modalDetalhes.observacoes || "Nenhuma observação adicional."}
                   </div>
                 </div>
-                <div className="w-full md:w-64 space-y-2">
+                <div className="w-full md:w-72 space-y-3 bg-slate-50 p-5 rounded-xl border border-slate-100">
                   <div className="flex justify-between items-end">
                     <span className="text-xs font-bold text-slate-400 uppercase">Subtotal</span>
-                    <span className="font-bold text-slate-600">{formatBRL(modalDetalhes.total)}</span>
+                    <span className="font-bold text-slate-700">{formatBRL(modalDetalhes.total)}</span>
                   </div>
-                  <div className="flex justify-between items-end border-t-2 border-slate-900 pt-2">
-                    <span className="text-sm font-black text-slate-900 uppercase">Total Final</span>
-                    <span className="text-2xl font-black text-brand-600 italic leading-none">{formatBRL(modalDetalhes.total)}</span>
+                  <div className="flex justify-between items-end border-t-2 border-slate-900 pt-4">
+                    <span className="text-sm font-black text-slate-900 uppercase italic">Total Líquido</span>
+                    <span className="text-3xl font-black text-brand-600 italic leading-none tabular-nums">{formatBRL(modalDetalhes.total)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Assinatura */}
-              <div className="mt-16 flex justify-center">
-                <div className="text-center">
-                  <div className="h-px w-64 bg-slate-300 mb-2"></div>
-                  <div className="text-[10px] font-bold uppercase text-slate-400 italic">Departamento Comercial</div>
-                  <div className="text-xs font-bold text-slate-700">{empresa.nomeFantasia}</div>
-                </div>
+              <div className="mt-16 flex flex-col items-center justify-center gap-2 opacity-60">
+                <div className="h-[1px] w-64 bg-slate-300"></div>
+                <div className="text-[10px] font-bold uppercase text-slate-400 italic tracking-widest">Departamento Comercial</div>
+                <div className="text-xs font-bold text-slate-600">{empresa.nomeFantasia}</div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 no-print">
-              <Button variant="outline" onClick={() => handleCopyWhatsApp(modalDetalhes)}>
+            <div className="flex flex-col md:flex-row justify-end gap-3 no-print p-2 md:p-0">
+              <Button variant="outline" onClick={() => handleCopyWhatsApp(modalDetalhes)} className="w-full md:w-auto">
                 <MessageSquare className="h-4 w-4 mr-2" /> Copiar para WhatsApp
               </Button>
-              <Button onClick={handlePrint} className="bg-slate-900 hover:bg-black text-white">
+              <Button onClick={handlePrint} className="bg-slate-900 hover:bg-black text-white w-full md:w-auto">
                 <Printer className="h-4 w-4 mr-2" /> Imprimir / PDF
               </Button>
             </div>
